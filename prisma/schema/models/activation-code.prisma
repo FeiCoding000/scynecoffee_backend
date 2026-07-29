@@ -1,0 +1,20 @@
+enum ActivationCodeStatus {
+  AVAILABLE
+  CLAIMED
+  DISABLED
+}
+
+model ActivationCode {
+  id              String               @id @default(uuid())
+  code            String               @unique
+  role            UserRole             @default(STAFF)
+  status          ActivationCodeStatus @default(AVAILABLE)
+  claimedByUserId String?              @map("claimed_by_user_id")
+  claimedAt       DateTime?            @map("claimed_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  claimedBy User? @relation(fields: [claimedByUserId], references: [id])
+
+  @@map("activation_codes")
+}
