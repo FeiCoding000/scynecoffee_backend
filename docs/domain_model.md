@@ -54,13 +54,17 @@ A user's profile name is represented by a display name. The display name is user
 
 Application email is optional and represents an email address the user may bind for future email/password login. Google provider email is stored separately because it comes from the external authentication provider and may not be the same as the application email.
 
+User activation is represented directly on the User entity. `isActivated` indicates whether the account has completed activation, and `activatedAt` records when activation occurred.
+
 ### Responsibilities
 
 The User domain manages:
 
 - User profile information, including display name
 - Optional application email binding
+- Google provider email from Firebase Authentication
 - User account status
+- User activation state
 - User role assignment
 - Connection between external identity providers and application users
 
@@ -80,8 +84,20 @@ User
 Display Name:
 Felix
 
+Google Email:
+felix@example.com
+
+Application Email:
+Not bound
+
 Role:
 Staff
+
+Status:
+ACTIVE
+
+Activated:
+true
 
 Preferred Drinks:
 - Morning Coffee

@@ -173,8 +173,10 @@ Responsibilities:
 Examples:
 
 - User activation.
-- Firebase identity/profile mapping during onboarding.
-- Manual application user creation with a display name when no matching Firebase user exists.
+- Firebase identity binding during activation.
+- Legacy Firebase profile lookup after activation.
+- Legacy preferred drink import after user confirmation.
+- Manual preferred drink creation when no matching legacy profile exists.
 - Order status transition.
 - Permission validation.
 
@@ -277,15 +279,14 @@ Token Verification
 
 ↓
 
-Firebase Identity / Profile Lookup
-
-↓
-
-Application User Mapping
+Application User Lookup or Activation Binding
 
 ↓
 
 Authenticated User Context
+
+
+Legacy Firebase profile lookup is a separate post-activation workflow used for optional data import. It is not required for normal authentication or account activation.
 
 ↓
 
@@ -399,8 +400,9 @@ Changes:
 
 - Backend verifies authentication tokens.
 - Introduce application user management.
-- Map existing Firebase identity/profile data into application users when available.
-- Allow manual application user creation with a non-unique display name when no matching Firebase user exists.
+- Bind Firebase UID and Google provider email to application users during activation.
+- Activate users through activation codes before legacy profile migration.
+- Store activation state directly on the User record using `isActivated` and `activatedAt`.
 - Keep application email optional and separate from Google provider email.
 - Existing Firebase operations continue.
 
@@ -448,7 +450,9 @@ Migrate existing Firebase data structures into the new domain model.
 Migration areas:
 
 - User.
+- Legacy Firebase profile lookup.
 - Preferred Drinks.
+- Drink Configurations.
 - Orders.
 - Menu data.
 

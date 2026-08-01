@@ -39,9 +39,11 @@ The system shall:
 - maintain application user records.
 - support controlled user onboarding.
 - support user activation.
+- store user activation state directly on the application user record.
 - maintain user profile information using a user-visible display name.
 - allow display names to be non-unique.
 - support optional application email binding for future email/password login.
+- store Google provider email separately from optional application email.
 - store external provider identity details separately from application profile data.
 - support user lifecycle management.
 
@@ -83,6 +85,7 @@ The system shall:
 - manage preferred drink configurations independently from user identity.
 - allow users to maintain multiple preferred drinks.
 - support reusable drink configurations.
+- support manual preferred drink creation when no legacy Firebase profile exists.
 
 ---
 
@@ -104,8 +107,11 @@ The system shall:
 - support migration of existing user information.
 - support migration of existing preferred drink information.
 - support coexistence with legacy Firebase data during migration.
-- support mapping existing Firebase users into application users when a matching Firebase identity or profile exists.
-- support manual application user creation with a display name when no matching Firebase user exists.
+- support binding Firebase identities to application users during activation.
+- support setting the application user's activation state when activation succeeds.
+- support activation even when no matching legacy Firebase profile exists.
+- support legacy Firebase profile lookup after activation.
+- support user-confirmed mapping of legacy preferred drink data into the new preferred drink model.
 
 ---
 

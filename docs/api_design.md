@@ -119,7 +119,8 @@ Normal verification uses Firebase Admin SDK ID token verification without revoca
         "email": null,
         "googleEmail": "user@example.com",
         "role": "staff",
-        "isActive": true
+        "status": "ACTIVE",
+        "isActivated": true
       }
     }
 
@@ -155,7 +156,8 @@ Required.
       "email": null,
       "googleEmail": "user@example.com",
       "role": "staff",
-      "isActive": true
+      "status": "ACTIVE",
+      "isActivated": true
     }
 
 
@@ -173,11 +175,13 @@ Required.
 
 Activate a user account through an activation code.
 
-This process links an external authentication identity with an application user when an authenticated Firebase identity is available.
+This process verifies the Firebase ID token, links the authenticated Firebase identity with an application user, and claims the activation code.
 
-If a matching Firebase identity or legacy Firebase profile exists, the backend maps Firebase UID, Google provider email and available name data into the application user.
+User activation does not depend on legacy Firebase profile migration. Once the Firebase identity and activation code are valid, the backend creates and activates the application user using Firebase UID, Google provider email, display name and role from the activation code.
 
-If no matching Firebase user exists, the backend may create an application user manually using a user-visible display name. Display names are not unique.
+The user record stores activation explicitly with `isActivated = true` and `activatedAt` set to the activation time.
+
+Legacy Firebase profile lookup and preferred drink migration happen after activation.
 
 
 ### Headers
@@ -191,7 +195,7 @@ If no matching Firebase user exists, the backend may create an application user 
       "displayName": "Felix"
     }
 
-`displayName` is required only when the backend cannot derive a display name from Firebase or existing profile data.
+`displayName` is the user-visible name for the application user. It is not unique and can be changed later.
 
 
 ### Process
@@ -204,15 +208,19 @@ If no matching Firebase user exists, the backend may create an application user 
 
     ↓
 
-    Firebase Identity / Profile Lookup
-
-    ↓
-
-    Map Existing User or Create Manual User
-
-    ↓
-
     Activation Code Validation
+
+    ↓
+
+    Create Application User
+
+    ↓
+
+    Set isActivated and activatedAt
+
+    ↓
+
+    Claim Activation Code
 
     ↓
 
@@ -226,7 +234,105 @@ If no matching Firebase user exists, the backend may create an application user 
 ### Response
 
     {
-      "status": "activated"
+      "status": "activated",
+      "user": {
+        "id": "123",
+        "displayName": "Felix",
+        "email": null,
+        "googleEmail": "user@example.com",
+        "role": "staff",
+        "status": "ACTIVE",
+        "isActivated": true
+      }
+    }
+
+
+---
+
+## 4.3 Preview Legacy Profile
+
+
+### Endpoint
+
+    GET /users/me/legacy-profile
+
+
+### Purpose
+
+Retrieve existing Firebase / Firestore profile data for the activated user so the frontend can show it for confirmation before import.
+
+This endpoint does not create or update preferred drinks. It only returns legacy data when available.
+
+
+### Authentication
+
+Required.
+
+    Authorization: Bearer <firebase-id-token>
+
+
+### Response When Legacy Profile Exists
+
+    {
+      "status": "found",
+      "profile": {
+        "displayName": "Felix Deng",
+        "googleEmail": "user@example.com"
+      },
+      "preferredDrinks": [
+        {
+          "displayName": "Morning Coffee",
+          "drink": "Flat White",
+          "milk": "Full Cream",
+          "strength": 1,
+          "sugar": 0
+        }
+      ]
+    }
+
+
+### Response When No Legacy Profile Exists
+
+    {
+      "status": "not_found"
+    }
+
+
+---
+
+## 4.4 Import Legacy Profile
+
+
+### Endpoint
+
+    POST /users/me/legacy-profile/import
+
+
+### Purpose
+
+Import confirmed legacy Firebase / Firestore profile data for the activated user.
+
+The import process maps legacy preferred drink data into the new domain model:
+
+    Legacy drink option
+    → DrinkConfiguration
+    → PreferredDrink
+
+Repeated drink settings should reuse existing drink configurations where possible.
+
+
+### Authentication
+
+Required.
+
+    Authorization: Bearer <firebase-id-token>
+
+
+### Response
+
+    {
+      "status": "imported",
+      "preferredDrinkCount": 2
     }
 
 

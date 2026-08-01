@@ -82,13 +82,16 @@ Introduce application user management.
 - Create Role domain.
 - Create activation code mechanism.
 - Implement user activation flow.
-- Map existing Firebase users.
+- Bind Firebase UID and Google provider email to application users during activation.
+- Store user activation state with `isActivated` and `activatedAt`.
+- Claim activation codes after successful activation.
 
 
 ## Deliverables
 
 - Users can activate accounts.
 - User identity is managed by backend.
+- User activation does not depend on legacy Firebase profile migration.
 
 
 # 6. Phase 3 - Authorization
@@ -124,8 +127,18 @@ Move business operations behind backend APIs.
 
 ### Preferred Drink API
 
+- Create drink configuration model.
+- Create preferred drink model.
 - Create preferred drink endpoints.
 - Separate drink configuration.
+
+
+### Legacy Profile Import
+
+- Query legacy Firebase / Firestore profile after user activation.
+- Return legacy profile data for user confirmation.
+- Map legacy preferred drink data into drink configurations and preferred drinks.
+- Allow users without legacy profile data to create preferred drinks manually.
 
 
 ### Order API
@@ -150,7 +163,7 @@ Adopt the new domain model.
 
 ## Tasks
 
-- Migrate user data.
+- Migrate legacy profile data for activated users.
 - Extract drink configurations.
 - Create preferred drink relationships.
 - Validate migrated data.

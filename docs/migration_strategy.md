@@ -185,37 +185,26 @@ Introduce:
 - Activation code mechanism.
 
 
-## User Binding Process
+## User Activation Process
 
 
-    User Login or User Onboarding
+    User Google Login
+
+          |
+
+          |
+
+ Firebase ID Token
 
           |
 
           |
 
- Check Existing Firebase Identity / Profile
+ Backend Token Verification
 
           |
 
-          +------------------------------+
-          |                              |
-          v                              v
-
- Existing Firebase User Found      No Firebase User Found
-
-          |                              |
-          |                              |
-
- Map Firebase Fields                Create Application User Manually
- Firebase UID                       Display Name
- Google Provider Email              Optional Application Email
- Display Name
-
-          |                              |
-          +--------------+---------------+
-                         |
-                         v
+          |
 
  Activation Code Verification
 
@@ -223,7 +212,20 @@ Introduce:
 
           |
 
- Bind External Identity When Available
+ Create Application User
+ Firebase UID
+ Google Provider Email
+ Display Name
+ Role from Activation Code
+ Status = ACTIVE
+ isActivated = true
+ activatedAt = current time
+
+          |
+
+          |
+
+ Claim Activation Code
 
           |
 
@@ -232,19 +234,25 @@ Introduce:
  Activate User
 
 
-## Legacy User Migration
+User activation is completed before legacy profile migration. A user should not be blocked from activation when no legacy Firebase profile exists.
 
-Existing Firebase user information will be reviewed and mapped into the new user model.
+Activation state is stored on the User record with `isActivated` and `activatedAt`, while activation code usage is tracked separately on the Activation Code record.
+
+
+## Legacy Profile Migration
+
+Existing Firebase user information will be reviewed and mapped after the application user has been activated.
 
 The migration process should:
 
-- Identify existing users.
-- Avoid duplicate accounts.
-- Preserve user preferences.
-- Map Firebase UID to the application user's external identity reference.
-- Map Google provider email separately from the optional application email.
-- Map available legacy name fields into a display name.
-- Allow manual creation of an application user with a non-unique display name when no matching Firebase user exists.
+- Require an already activated application user.
+- Query Firebase / Firestore legacy profile data by Firebase UID or Google provider email.
+- Return legacy profile and preferred drink data for user confirmation before import.
+- Preserve user preferences when legacy data exists.
+- Map available legacy name fields into the user's display name only when the user confirms the import.
+- Map legacy drink options into `DrinkConfiguration` and `PreferredDrink` records.
+- Reuse existing drink configurations where repeated drink settings already exist.
+- Allow users with no legacy profile to manually create preferred drinks after activation.
 
 
 ---
