@@ -22,6 +22,81 @@ NestJS backend service for ScyneCoffee.
 npm install
 ```
 
+## Environment Setup
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### Database Environment
+
+For local development with Docker PostgreSQL, keep:
+
+```env
+DATABASE_URL="postgresql://scynecoffee:scynecoffee@localhost:5432/scynecoffee?schema=public"
+```
+
+Start the local database:
+
+```bash
+docker compose up -d postgres
+```
+
+Run Prisma migrations:
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+### Firebase Admin SDK Environment
+
+The backend uses Firebase Admin SDK to verify Firebase Authentication ID tokens.
+
+Do **not** use the frontend Firebase app config. The backend needs a Firebase **Service Account** private key.
+
+To get the required values:
+
+1. Open Firebase Console.
+2. Select the ScyneCoffee Firebase project.
+3. Go to **Project settings** using the gear icon.
+4. Open the **Service accounts** tab.
+5. Select **Firebase Admin SDK**.
+6. Select **Node.js**.
+7. Click **Generate new private key**.
+8. Download the generated JSON file.
+
+From the downloaded JSON, copy these fields into `.env`:
+
+```json
+{
+  "project_id": "...",
+  "client_email": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+}
+```
+
+Set them in `.env`:
+
+```env
+FIREBASE_PROJECT_ID="your-firebase-project-id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@your-firebase-project-id.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
+```
+
+Important notes:
+
+- Keep `FIREBASE_PRIVATE_KEY` as one line in `.env`.
+- Preserve the `\n` newline markers inside the private key.
+- Never commit `.env` or the downloaded Firebase service account JSON file.
+
 ## Development
 
 ```bash
@@ -79,10 +154,16 @@ Run container:
 docker run --rm -p 3000:3000 scynecoffee-backend
 ```
 
-Or use Docker Compose:
+Or use Docker Compose to start all services:
 
 ```bash
 docker compose up --build
+```
+
+Start only the database:
+
+```bash
+docker compose up -d postgres
 ```
 
 Stop Compose services:
@@ -99,6 +180,14 @@ src/
   app.module.ts
   app.service.ts
   main.ts
+  infrastructure/
+    database/
+    firebase/
+prisma/
+  schema/
+    schema.prisma
+    models/
+    migrations/
 test/
   app.e2e-spec.ts
 ```
@@ -112,6 +201,9 @@ npm run build       Build production files
 npm run start:prod  Run built app
 npm test            Run unit tests
 npm run test:e2e    Run e2e tests
-npm run lint        Run ESLint
-npm run format      Format source files
+npm run lint             Run ESLint
+npm run format           Format source files
+npm run prisma:generate  Generate Prisma Client
+npm run prisma:migrate   Run Prisma migration in development
+npm run prisma:studio    Open Prisma Studio
 ```
