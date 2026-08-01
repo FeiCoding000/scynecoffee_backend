@@ -282,10 +282,17 @@ Required.
       "preferredDrinks": [
         {
           "displayName": "Morning Coffee",
-          "drink": "Flat White",
-          "milk": "Full Cream",
-          "strength": 1,
-          "sugar": 0
+          "category": "COFFEE",
+          "drinkType": "Flat White",
+          "milk": "FULL",
+          "strength": "ONE",
+          "sugar": "ZERO",
+          "sweetener": "ZERO",
+          "teaBagCount": null,
+          "powderScoops": null,
+          "iced": false,
+          "xhot": false,
+          "decaf": false
         }
       ]
     }
@@ -384,10 +391,31 @@ Retrieve available drink configurations.
     [
       {
         "id": "001",
-        "name": "Flat White",
-        "milk": "Full Cream",
-        "strength": 1,
-        "sugar": 0
+        "category": "COFFEE",
+        "drinkType": "Flat White",
+        "milk": "FULL",
+        "strength": "ONE",
+        "sugar": "ZERO",
+        "sweetener": "ZERO",
+        "teaBagCount": null,
+        "powderScoops": null,
+        "iced": false,
+        "xhot": false,
+        "decaf": false
+      },
+      {
+        "id": "002",
+        "category": "CHOCOLATE",
+        "drinkType": "Hot Chocolate",
+        "milk": "FULL",
+        "strength": null,
+        "sugar": "ZERO",
+        "sweetener": "ZERO",
+        "teaBagCount": null,
+        "powderScoops": "TWO",
+        "iced": false,
+        "xhot": false,
+        "decaf": false
       }
     ]
 
@@ -434,12 +462,32 @@ Retrieve saved drinks for the current user.
 Create a saved drink preference.
 
 
-### Request
+### Request With Existing Drink Configuration
 
     {
       "drinkConfigurationId": "001",
       "displayName": "Morning Coffee"
     }
+
+
+### Request With New Drink Configuration
+
+    {
+      "displayName": "Morning Coffee",
+      "drinkConfiguration": {
+        "category": "COFFEE",
+        "drinkType": "Flat White",
+        "milk": "FULL",
+        "strength": "ONE",
+        "sugar": "ZERO",
+        "sweetener": "ZERO",
+        "iced": false,
+        "xhot": false,
+        "decaf": false
+      }
+    }
+
+The backend should reuse an existing matching `DrinkConfiguration` when one already exists.
 
 
 # 8. Order API

@@ -1,0 +1,58 @@
+enum DrinkCategory {
+  COFFEE
+  TEA
+  CHAI
+  CHOCOLATE
+  MILK
+  OTHER
+}
+
+enum MilkType {
+  FULL
+  LITE
+  ALMOND
+  SOY
+  LACTOSE_FREE
+  OAT
+  NONE
+}
+
+enum DrinkStrength {
+  HALF
+  ONE
+  TWO
+  THREE
+  FOUR
+}
+
+enum PortionAmount {
+  ZERO
+  HALF
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+}
+
+model DrinkConfiguration {
+  id           String         @id @default(uuid())
+  category     DrinkCategory
+  drinkType    String         @map("drink_type")
+  milk         MilkType       @default(NONE)
+  strength     DrinkStrength?
+  sugar        PortionAmount  @default(ZERO)
+  sweetener    PortionAmount  @default(ZERO)
+  teaBagCount  PortionAmount? @map("tea_bag_count")
+  powderScoops PortionAmount? @map("powder_scoops")
+  iced         Boolean        @default(false)
+  xhot         Boolean        @default(false)
+  decaf        Boolean        @default(false)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  preferredDrinks PreferredDrink[]
+
+  @@unique([category, drinkType, milk, strength, sugar, sweetener, teaBagCount, powderScoops, iced, xhot, decaf], map: "drink_configurations_unique_config_key")
+  @@map("drink_configurations")
+}

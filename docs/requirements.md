@@ -85,6 +85,8 @@ The system shall:
 - manage preferred drink configurations independently from user identity.
 - allow users to maintain multiple preferred drinks.
 - support reusable drink configurations.
+- support coffee, tea, chai, chocolate, milk and other drink categories.
+- support standardised options for milk, strength, sugar, sweetener, tea bag count, powder scoops, iced, extra hot and decaf.
 - support manual preferred drink creation when no legacy Firebase profile exists.
 
 ---

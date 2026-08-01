@@ -1,0 +1,17 @@
+model PreferredDrink {
+  id                   String  @id @default(uuid())
+  userId               String  @map("user_id")
+  drinkConfigurationId String  @map("drink_configuration_id")
+  displayName          String  @map("display_name")
+  sortOrder            Int?    @map("sort_order")
+  isDefault            Boolean @default(false) @map("is_default")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  user               User               @relation(fields: [userId], references: [id])
+  drinkConfiguration DrinkConfiguration @relation(fields: [drinkConfigurationId], references: [id])
+
+  @@index([userId], map: "preferred_drinks_user_id_idx")
+  @@index([drinkConfigurationId], map: "preferred_drinks_drink_configuration_id_idx")
+  @@map("preferred_drinks")
+}

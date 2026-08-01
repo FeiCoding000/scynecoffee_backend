@@ -23,6 +23,7 @@ model User {
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
   claimedActivationCodes ActivationCode[]
+  preferredDrinks         PreferredDrink[]
 
   @@map("users")
 }

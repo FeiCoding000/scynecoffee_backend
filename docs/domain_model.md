@@ -221,25 +221,101 @@ Drink settings are separated from users because multiple users may share identic
 
 The Drink Configuration domain manages:
 
-- Storing standard drink options
-- Providing reusable drink definitions
+- Storing reusable drink option combinations
+- Supporting multiple drink categories, including coffee, tea, chai, chocolate, milk and other drinks
+- Providing reusable drink definitions for preferred drinks and orders
 - Avoiding duplicated drink configuration data
 
-### Example
+### Core Fields
+
+| Field | Purpose | Example |
+|---|---|---|
+| `category` | High-level drink category | `COFFEE`, `TEA`, `CHAI`, `CHOCOLATE`, `MILK`, `OTHER` |
+| `drinkType` | Specific drink name | `Flat White`, `English Breakfast`, `Hot Chocolate` |
+| `milk` | Milk selection | `FULL`, `LITE`, `ALMOND`, `SOY`, `LACTOSE_FREE`, `OAT`, `NONE` |
+| `strength` | Coffee strength / shots | `HALF`, `ONE`, `TWO`, `THREE`, `FOUR` |
+| `sugar` | Sugar amount | `ZERO`, `HALF`, `ONE`, `TWO`, `THREE`, `FOUR`, `FIVE` |
+| `sweetener` | Sweetener amount | `ZERO`, `HALF`, `ONE`, `TWO`, `THREE`, `FOUR`, `FIVE` |
+| `teaBagCount` | Tea bag count for tea drinks | `ONE`, `TWO` |
+| `powderScoops` | Powder or syrup amount for chai/chocolate drinks | `ONE`, `TWO` |
+| `iced` | Whether the drink is iced | `true`, `false` |
+| `xhot` | Whether the drink is extra hot | `true`, `false` |
+| `decaf` | Whether the drink is decaf | `true`, `false` |
+
+### Option Rules
+
+- Coffee drinks use `strength` for coffee shots or strength.
+- Tea drinks use `teaBagCount`.
+- Chai and chocolate drinks use `powderScoops`.
+- Milk-only drinks do not require `strength`, `teaBagCount` or `powderScoops`.
+- Drinks such as long black or espresso use `milk = NONE`.
+- Hot drinks may use `xhot = true` when the user wants extra hot.
+- Repeated configurations should be reused rather than duplicated.
+
+### Examples
+
+Coffee:
 
 ```txt
-Drink Configuration
+category: COFFEE
+drinkType: Flat White
+milk: FULL
+strength: ONE
+sugar: ZERO
+sweetener: ZERO
+iced: false
+xhot: false
+decaf: false
+```
 
-Flat White
+Tea:
+
+```txt
+category: TEA
+drinkType: English Breakfast
+milk: LITE
+teaBagCount: ONE
+sugar: HALF
+sweetener: ZERO
+iced: false
+xhot: false
+decaf: false
+```
+
+Chai:
+
+```txt
+category: CHAI
+drinkType: Chai Latte
+milk: OAT
+powderScoops: ONE
+sugar: ZERO
+sweetener: ZERO
+iced: false
+xhot: false
+```
+
+Chocolate:
+
+```txt
+category: CHOCOLATE
+drinkType: Hot Chocolate
+milk: FULL
+powderScoops: TWO
+sugar: ZERO
+sweetener: ZERO
+iced: false
+xhot: false
+```
 
 Milk:
-Full Cream
 
-Strength:
-1
-
-Sugar:
-0
+```txt
+category: MILK
+drinkType: Warm Milk
+milk: FULL
+iced: false
+xhot: false
 ```
 
 ### Relationship
@@ -267,8 +343,11 @@ The domain separates:
 
 ```txt
 Drink Configuration:
-Flat White
-Full Cream Milk
+category: COFFEE
+drinkType: Flat White
+milk: FULL
+strength: ONE
+sugar: ZERO
 
 Preferred Drink:
 User: Felix
