@@ -16,6 +16,12 @@ The purpose of introducing backend APIs is to:
 
 The API follows RESTful design principles and communicates using JSON format.
 
+The backend exposes Swagger/OpenAPI documentation for development and API testing:
+
+    http://localhost:3000/api/docs
+
+Swagger should include the available endpoints, request/response schemas and Bearer token authentication support.
+
 
 # 2. API Design Principles
 
@@ -54,6 +60,51 @@ API consumers should not depend on:
 - Internal storage implementation.
 
 The API represents business capabilities rather than database operations.
+
+
+## Swagger / OpenAPI
+
+The backend should generate Swagger/OpenAPI documentation from the NestJS application.
+
+Swagger UI is available at:
+
+    /api/docs
+
+Protected endpoints should use Bearer authentication in Swagger so developers can test APIs with a Firebase ID token.
+
+
+## Response Envelope
+
+All successful API responses should use a consistent response envelope:
+
+    {
+      "data": {}
+    }
+
+For list responses:
+
+    {
+      "data": []
+    }
+
+For empty successful responses:
+
+    {
+      "data": null
+    }
+
+Business response examples in this document are returned inside the `data` field unless explicitly stated otherwise.
+
+All API errors should use a consistent error envelope:
+
+    {
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Human readable error message"
+      }
+    }
+
+The frontend should read business payloads from `response.data` and handle failures from `response.error`.
 
 
 # 3. Authentication API
@@ -113,14 +164,16 @@ Normal verification uses Firebase Admin SDK ID token verification without revoca
 ### Response
 
     {
-      "user": {
-        "id": "123",
-        "displayName": "Felix",
-        "email": null,
-        "googleEmail": "user@example.com",
-        "role": "staff",
-        "status": "ACTIVE",
-        "isActivated": true
+      "data": {
+        "user": {
+          "id": "123",
+          "displayName": "Felix",
+          "email": null,
+          "googleEmail": "user@example.com",
+          "role": "staff",
+          "status": "ACTIVE",
+          "isActivated": true
+        }
       }
     }
 
@@ -151,13 +204,15 @@ Required.
 ### Response
 
     {
-      "id": "123",
-      "displayName": "Felix",
-      "email": null,
-      "googleEmail": "user@example.com",
-      "role": "staff",
-      "status": "ACTIVE",
-      "isActivated": true
+      "data": {
+        "id": "123",
+        "displayName": "Felix",
+        "email": null,
+        "googleEmail": "user@example.com",
+        "role": "staff",
+        "status": "ACTIVE",
+        "isActivated": true
+      }
     }
 
 
@@ -234,15 +289,17 @@ Legacy Firebase profile lookup and preferred drink migration happen after activa
 ### Response
 
     {
-      "status": "activated",
-      "user": {
-        "id": "123",
-        "displayName": "Felix",
-        "email": null,
-        "googleEmail": "user@example.com",
-        "role": "staff",
-        "status": "ACTIVE",
-        "isActivated": true
+      "data": {
+        "status": "activated",
+        "user": {
+          "id": "123",
+          "displayName": "Felix",
+          "email": null,
+          "googleEmail": "user@example.com",
+          "role": "staff",
+          "status": "ACTIVE",
+          "isActivated": true
+        }
       }
     }
 
@@ -274,34 +331,38 @@ Required.
 ### Response When Legacy Profile Exists
 
     {
-      "status": "found",
-      "profile": {
-        "displayName": "Felix Deng",
-        "googleEmail": "user@example.com"
-      },
-      "preferredDrinks": [
-        {
-          "displayName": "Morning Coffee",
-          "category": "COFFEE",
-          "drinkType": "Flat White",
-          "milk": "FULL",
-          "strength": "ONE",
-          "sugar": "ZERO",
-          "sweetener": "ZERO",
-          "teaBagCount": null,
-          "powderScoops": null,
-          "iced": false,
-          "xhot": false,
-          "decaf": false
-        }
-      ]
+      "data": {
+        "status": "found",
+        "profile": {
+          "displayName": "Felix Deng",
+          "googleEmail": "user@example.com"
+        },
+        "preferredDrinks": [
+          {
+            "displayName": "Morning Coffee",
+            "category": "COFFEE",
+            "drinkType": "Flat White",
+            "milk": "FULL",
+            "strength": "ONE",
+            "sugar": "ZERO",
+            "sweetener": "ZERO",
+            "teaBagCount": null,
+            "powderScoops": null,
+            "iced": false,
+            "xhot": false,
+            "decaf": false
+          }
+        ]
+      }
     }
 
 
 ### Response When No Legacy Profile Exists
 
     {
-      "status": "not_found"
+      "data": {
+        "status": "not_found"
+      }
     }
 
 
@@ -338,8 +399,10 @@ Required.
 ### Response
 
     {
-      "status": "imported",
-      "preferredDrinkCount": 2
+      "data": {
+        "status": "imported",
+        "preferredDrinkCount": 2
+      }
     }
 
 
@@ -362,11 +425,13 @@ Return available actions for the current user based on their role.
 ### Response
 
     {
-      "role": "staff",
-      "permissions": [
-        "ORDER_CREATE",
-        "ORDER_VIEW"
-      ]
+      "data": {
+        "role": "staff",
+        "permissions": [
+          "ORDER_CREATE",
+          "ORDER_VIEW"
+        ]
+      }
     }
 
 
@@ -388,36 +453,38 @@ Retrieve available drink configurations.
 
 ### Response
 
-    [
-      {
-        "id": "001",
-        "category": "COFFEE",
-        "drinkType": "Flat White",
-        "milk": "FULL",
-        "strength": "ONE",
-        "sugar": "ZERO",
-        "sweetener": "ZERO",
-        "teaBagCount": null,
-        "powderScoops": null,
-        "iced": false,
-        "xhot": false,
-        "decaf": false
-      },
-      {
-        "id": "002",
-        "category": "CHOCOLATE",
-        "drinkType": "Hot Chocolate",
-        "milk": "FULL",
-        "strength": null,
-        "sugar": "ZERO",
-        "sweetener": "ZERO",
-        "teaBagCount": null,
-        "powderScoops": "TWO",
-        "iced": false,
-        "xhot": false,
-        "decaf": false
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "001",
+          "category": "COFFEE",
+          "drinkType": "Flat White",
+          "milk": "FULL",
+          "strength": "ONE",
+          "sugar": "ZERO",
+          "sweetener": "ZERO",
+          "teaBagCount": null,
+          "powderScoops": null,
+          "iced": false,
+          "xhot": false,
+          "decaf": false
+        },
+        {
+          "id": "002",
+          "category": "CHOCOLATE",
+          "drinkType": "Hot Chocolate",
+          "milk": "FULL",
+          "strength": null,
+          "sugar": "ZERO",
+          "sweetener": "ZERO",
+          "teaBagCount": null,
+          "powderScoops": "TWO",
+          "iced": false,
+          "xhot": false,
+          "decaf": false
+        }
+      ]
+    }
 
 
 # 7. Preferred Drink API
@@ -438,13 +505,15 @@ Retrieve saved drinks for the current user.
 
 ### Response
 
-    [
-      {
-        "id": "001",
-        "displayName": "Morning Coffee",
-        "drinkConfigurationId": "001"
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "001",
+          "displayName": "Morning Coffee",
+          "drinkConfigurationId": "001"
+        }
+      ]
+    }
 
 
 ---
@@ -520,8 +589,10 @@ Create a new coffee order.
 ### Response
 
     {
-      "orderId": "123",
-      "status": "Pending"
+      "data": {
+        "orderId": "123",
+        "status": "Pending"
+      }
     }
 
 

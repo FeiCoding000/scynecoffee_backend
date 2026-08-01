@@ -109,6 +109,12 @@ Default server URL:
 http://localhost:3000
 ```
 
+Swagger API documentation:
+
+```txt
+http://localhost:3000/api/docs
+```
+
 If port `3000` is already in use, start with another port:
 
 ```bash
