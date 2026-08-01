@@ -129,6 +129,8 @@ Example:
 }
 ```
 
+During migration, legacy `firstName` and `lastName` values can be combined or transformed into the new application user's `displayName`.
+
 ### Observations
 
 The user entity currently contains:

@@ -55,11 +55,16 @@ The User entity represents application identity and business information.
 
 Authentication provider details are separated from user profile information.
 
+A user's profile name is represented by a display name. The display name is user-visible, may be duplicated across users, and does not need to be split into first name and last name.
+
+Application email is optional and represents an email address the user may bind for future email/password login. Google provider email is stored separately because it comes from the external authentication provider and may not be the same as the application email.
+
 Responsibilities
 
 The User domain manages:
 
-User profile information.
+User profile information, including display name.
+Optional application email binding.
 User account status.
 User role assignment.
 Connection between external identity providers and application users.
@@ -75,7 +80,8 @@ Example:
 
 User
 
-Felix Deng
+Display Name:
+Felix
 
 Role:
 Staff
@@ -88,20 +94,22 @@ Purpose
 
 The Authentication domain manages user identity verification.
 
-The system currently relies on Google Authentication.
+The system currently relies on Google Authentication through Firebase.
 
 The backend will become responsible for validating user identity before accessing protected resources.
 
 Responsibilities
 Verify authentication tokens.
 Identify application users.
+Look up existing Firebase identity/profile data during onboarding.
+Map external identity fields, such as Firebase UID and Google provider email, to the application user when available.
 Establish authenticated user context.
 
 Relationship:
 
 External Identity Provider
 
-(Google)
+(Google / Firebase)
 
         |
 

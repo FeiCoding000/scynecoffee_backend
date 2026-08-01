@@ -39,7 +39,10 @@ The system shall:
 - maintain application user records.
 - support controlled user onboarding.
 - support user activation.
-- maintain user profile information.
+- maintain user profile information using a user-visible display name.
+- allow display names to be non-unique.
+- support optional application email binding for future email/password login.
+- store external provider identity details separately from application profile data.
 - support user lifecycle management.
 
 ---
@@ -101,6 +104,8 @@ The system shall:
 - support migration of existing user information.
 - support migration of existing preferred drink information.
 - support coexistence with legacy Firebase data during migration.
+- support mapping existing Firebase users into application users when a matching Firebase identity or profile exists.
+- support manual application user creation with a display name when no matching Firebase user exists.
 
 ---
 
@@ -171,6 +176,7 @@ The following assumptions apply:
 - Existing Firebase Authentication remains available during migration.
 - Existing Firestore data remains accessible during migration.
 - Existing frontend applications continue operating while backend capabilities are introduced incrementally.
+- Google authentication normally provides a provider email, but the application user email remains optional to support future non-Google login options.
 
 ---
 

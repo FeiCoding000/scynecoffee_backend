@@ -101,7 +101,9 @@ Verify the user's authentication token and establish an authenticated applicatio
     {
       "user": {
         "id": "123",
-        "email": "user@example.com",
+        "displayName": "Felix",
+        "email": null,
+        "googleEmail": "user@example.com",
         "role": "staff",
         "isActive": true
       }
@@ -133,8 +135,9 @@ Required.
 
     {
       "id": "123",
-      "firstName": "Felix",
-      "lastName": "Deng",
+      "displayName": "Felix",
+      "email": null,
+      "googleEmail": "user@example.com",
       "role": "staff",
       "isActive": true
     }
@@ -154,14 +157,21 @@ Required.
 
 Activate a user account through an activation code.
 
-This process links an external authentication identity with an application user.
+This process links an external authentication identity with an application user when an authenticated Firebase identity is available.
+
+If a matching Firebase identity or legacy Firebase profile exists, the backend maps Firebase UID, Google provider email and available name data into the application user.
+
+If no matching Firebase user exists, the backend may create an application user manually using a user-visible display name. Display names are not unique.
 
 
 ### Request
 
     {
-      "activationCode": "ABC123"
+      "activationCode": "ABC123",
+      "displayName": "Felix"
     }
+
+`displayName` is required only when the backend cannot derive a display name from Firebase or existing profile data.
 
 
 ### Process
@@ -171,6 +181,14 @@ This process links an external authentication identity with an application user.
     ↓
 
     Identity Verification
+
+    ↓
+
+    Firebase Identity / Profile Lookup
+
+    ↓
+
+    Map Existing User or Create Manual User
 
     ↓
 

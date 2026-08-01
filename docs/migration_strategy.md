@@ -188,17 +188,34 @@ Introduce:
 ## User Binding Process
 
 
-    User Login
+    User Login or User Onboarding
 
           |
 
           |
 
- Check Existing Profile
+ Check Existing Firebase Identity / Profile
 
           |
 
-          |
+          +------------------------------+
+          |                              |
+          v                              v
+
+ Existing Firebase User Found      No Firebase User Found
+
+          |                              |
+          |                              |
+
+ Map Firebase Fields                Create Application User Manually
+ Firebase UID                       Display Name
+ Google Provider Email              Optional Application Email
+ Display Name
+
+          |                              |
+          +--------------+---------------+
+                         |
+                         v
 
  Activation Code Verification
 
@@ -206,7 +223,7 @@ Introduce:
 
           |
 
- Bind External Identity
+ Bind External Identity When Available
 
           |
 
@@ -224,6 +241,10 @@ The migration process should:
 - Identify existing users.
 - Avoid duplicate accounts.
 - Preserve user preferences.
+- Map Firebase UID to the application user's external identity reference.
+- Map Google provider email separately from the optional application email.
+- Map available legacy name fields into a display name.
+- Allow manual creation of an application user with a non-unique display name when no matching Firebase user exists.
 
 
 ---
@@ -303,6 +324,11 @@ Target:
 
 
     User
+
+    - Display Name
+    - Optional Application Email
+    - Optional Firebase UID
+    - Optional Google Provider Email
 
           |
 

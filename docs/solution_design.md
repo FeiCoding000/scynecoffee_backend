@@ -173,6 +173,8 @@ Responsibilities:
 Examples:
 
 - User activation.
+- Firebase identity/profile mapping during onboarding.
+- Manual application user creation with a display name when no matching Firebase user exists.
 - Order status transition.
 - Permission validation.
 
@@ -264,6 +266,14 @@ Backend API
 ↓
 
 Token Verification
+
+↓
+
+Firebase Identity / Profile Lookup
+
+↓
+
+Application User Mapping
 
 ↓
 
@@ -381,6 +391,9 @@ Changes:
 
 - Backend verifies authentication tokens.
 - Introduce application user management.
+- Map existing Firebase identity/profile data into application users when available.
+- Allow manual application user creation with a non-unique display name when no matching Firebase user exists.
+- Keep application email optional and separate from Google provider email.
 - Existing Firebase operations continue.
 
 
