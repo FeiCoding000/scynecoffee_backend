@@ -257,11 +257,19 @@ Google Authentication
 
 ↓
 
-Authentication Token
+Firebase ID Token
 
 ↓
 
 Backend API
+
+The frontend sends the Firebase ID token in the standard HTTP Authorization header:
+
+    Authorization: Bearer <firebase-id-token>
+
+For normal protected API requests, the backend verifies the Firebase ID token using Firebase Admin SDK standard verification. This validates the token signature, expiry, issuer and audience. The backend does not need to perform Firebase token revocation checking on every request.
+
+For sensitive operations, such as account security changes or high-risk administrative actions, the backend may use stricter verification with token revocation checking.
 
 ↓
 

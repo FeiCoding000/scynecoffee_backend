@@ -36,6 +36,14 @@ All protected operations must pass through backend authentication and authorizat
 
 The frontend should not directly access protected resources.
 
+Authenticated requests should send the Firebase ID token using the standard HTTP Authorization header:
+
+    Authorization: Bearer <firebase-id-token>
+
+The token is the Firebase Authentication ID token obtained by the frontend after Google sign-in, for example by calling `currentUser.getIdToken()`. It is not the raw Google OAuth access token.
+
+For normal protected API requests, the backend verifies the token with Firebase Admin SDK using standard ID token verification. Revocation checking is not required for every request. Sensitive operations may perform stricter verification with token revocation checking when needed.
+
 
 ## Database Independence
 
@@ -64,11 +72,17 @@ The API represents business capabilities rather than database operations.
 Verify the user's authentication token and establish an authenticated application user context.
 
 
-### Request
+### Headers
 
-    {
-      "token": "firebase-auth-token"
-    }
+    Authorization: Bearer <firebase-id-token>
+
+### Request Body
+
+No request body is required.
+
+The `<firebase-id-token>` value is the Firebase Authentication ID token obtained by the frontend after Google sign-in, for example by calling `currentUser.getIdToken()`.
+
+Normal verification uses Firebase Admin SDK ID token verification without revocation checking. APIs that perform sensitive account or administrative actions may additionally check whether the token has been revoked.
 
 
 ### Process
@@ -81,11 +95,11 @@ Verify the user's authentication token and establish an authenticated applicatio
 
     ↓
 
-    Firebase Token
+    Firebase ID Token
 
     ↓
 
-    Backend Verification
+    Backend Verification via Authorization Bearer Token
 
     ↓
 
@@ -130,6 +144,8 @@ Retrieve information about the currently authenticated user.
 
 Required.
 
+    Authorization: Bearer <firebase-id-token>
+
 
 ### Response
 
@@ -163,6 +179,10 @@ If a matching Firebase identity or legacy Firebase profile exists, the backend m
 
 If no matching Firebase user exists, the backend may create an application user manually using a user-visible display name. Display names are not unique.
 
+
+### Headers
+
+    Authorization: Bearer <firebase-id-token>
 
 ### Request
 

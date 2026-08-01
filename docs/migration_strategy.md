@@ -141,7 +141,7 @@ Introduce:
 
       |
 
- Firebase Token
+ Firebase ID Token
 
       |
 
