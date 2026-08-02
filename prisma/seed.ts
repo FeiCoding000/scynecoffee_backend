@@ -35,6 +35,10 @@ function buildUniqueActivationCodes(
 }
 
 async function main(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Refusing to run local seed script in production.');
+  }
+
   const existingActivationCodes = await prisma.activationCode.findMany({
     select: { code: true },
   });
