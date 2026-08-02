@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -5,9 +6,11 @@ const prisma = new PrismaClient();
 const ACTIVATION_CODE_COUNT = 200;
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const DIGITS = '0123456789';
+const SEED_LOCK_NAMESPACE = 20260802;
+const SEED_LOCK_KEY = 1;
 
 function randomChar(characters: string): string {
-  return characters[Math.floor(Math.random() * characters.length)];
+  return characters[randomInt(characters.length)];
 }
 
 function buildRandomActivationCode(): string {
@@ -39,30 +42,52 @@ async function main(): Promise<void> {
     throw new Error('Refusing to run local seed script in production.');
   }
 
-  const existingActivationCodes = await prisma.activationCode.findMany({
-    select: { code: true },
-  });
-  const existingCodes = new Set(
-    existingActivationCodes.map(({ code }) => code),
-  );
-  const missingCodeCount = ACTIVATION_CODE_COUNT - existingCodes.size;
+  const result = await prisma.$transaction(async (transaction) => {
+    await transaction.$executeRaw`
+      SELECT pg_advisory_xact_lock(
+        ${SEED_LOCK_NAMESPACE}::integer,
+        ${SEED_LOCK_KEY}::integer
+      )
+    `;
 
-  if (missingCodeCount <= 0) {
+    const existingActivationCodes = await transaction.activationCode.findMany({
+      select: { code: true },
+    });
+    const existingCodes = new Set(
+      existingActivationCodes.map(({ code }) => code),
+    );
+    const missingCodeCount = ACTIVATION_CODE_COUNT - existingCodes.size;
+
+    if (missingCodeCount <= 0) {
+      return {
+        existingCodeCount: existingCodes.size,
+        insertedCount: 0,
+        codes: [],
+      };
+    }
+
+    const codes = buildUniqueActivationCodes(missingCodeCount, existingCodes);
+    const createManyResult = await transaction.activationCode.createMany({
+      data: codes.map((code) => ({ code })),
+      skipDuplicates: true,
+    });
+
+    return {
+      existingCodeCount: existingCodes.size,
+      insertedCount: createManyResult.count,
+      codes,
+    };
+  });
+
+  if (result.insertedCount === 0) {
     console.log(
-      `Activation code seed skipped. ${existingCodes.size} codes already exist.`,
+      `Activation code seed skipped. ${result.existingCodeCount} codes already exist.`,
     );
     return;
   }
 
-  const codes = buildUniqueActivationCodes(missingCodeCount, existingCodes);
-
-  await prisma.activationCode.createMany({
-    data: codes.map((code) => ({ code })),
-    skipDuplicates: true,
-  });
-
-  console.log(`Seeded ${codes.length} activation codes:`);
-  console.log(codes.join(', '));
+  console.log(`Seeded ${result.insertedCount} activation codes:`);
+  console.log(result.codes.join(', '));
 }
 
 main()
