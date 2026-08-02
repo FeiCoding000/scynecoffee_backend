@@ -111,9 +111,13 @@ The system shall:
 - support coexistence with legacy Firebase data during migration.
 - support binding Firebase identities to application users during activation.
 - support setting the application user's activation state when activation succeeds.
-- support activation even when no matching legacy Firebase profile exists.
-- support legacy Firebase profile lookup after activation.
-- support user-confirmed mapping of legacy preferred drink data into the new preferred drink model.
+- create an activated application user after successful Firebase identity and activation code verification.
+- start newly activated users with an empty preferred drink list.
+- support post-activation profile setup by submitted display name.
+- support legacy Firestore user lookup by submitted display name during profile setup.
+- support automatic mapping of matching legacy `options` into the new preferred drink model during profile setup.
+- allow users with no matching legacy Firebase profile to continue with an empty preferred drink list.
+- prevent automatic import when multiple legacy users match the same display name.
 
 ---
 
@@ -203,11 +207,11 @@ The following items are outside the scope of the initial implementation:
 
 # 8. Requirements Traceability
 
-| Problem ID | Requirement |
-|------------|-------------|
-| P-01 Frontend/Data Coupling | FR-06, NFR-02 |
-| P-02 Backend Authentication | FR-01 |
-| P-03 Distributed Authorization | FR-03, NFR-01 |
-| P-04 Coupled User Model | FR-02, FR-05 |
-| P-05 Simplified Order Workflow | FR-04 |
-| P-06 Lack of Backend Services | FR-06, NFR-02, NFR-03 |
+| Problem ID                     | Requirement           |
+| ------------------------------ | --------------------- |
+| P-01 Frontend/Data Coupling    | FR-06, NFR-02         |
+| P-02 Backend Authentication    | FR-01                 |
+| P-03 Distributed Authorization | FR-03, NFR-01         |
+| P-04 Coupled User Model        | FR-02, FR-05          |
+| P-05 Simplified Order Workflow | FR-04                 |
+| P-06 Lack of Backend Services  | FR-06, NFR-02, NFR-03 |

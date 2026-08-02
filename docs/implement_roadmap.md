@@ -8,9 +8,7 @@ The implementation will follow the solution design and migration strategy.
 
 Development will be completed incrementally to reduce risk and maintain system availability.
 
-
 # 2. Development Approach
-
 
 The implementation follows these principles:
 
@@ -19,14 +17,11 @@ The implementation follows these principles:
 - Introduce backend capabilities gradually.
 - Validate each migration step before proceeding.
 
-
 # 3. Phase 0 - Project Foundation
-
 
 ## Objective
 
 Establish backend project structure and development environment.
-
 
 ## Tasks
 
@@ -37,21 +32,17 @@ Establish backend project structure and development environment.
 - Setup logging.
 - Setup testing framework.
 
-
 ## Deliverables
 
 - Running backend application.
 - Development workflow.
 - Initial project documentation.
 
-
 # 4. Phase 1 - Authentication Foundation
-
 
 ## Objective
 
 Introduce backend-controlled authentication.
-
 
 ## Tasks
 
@@ -61,20 +52,16 @@ Introduce backend-controlled authentication.
 - Create authenticated user context.
 - Provide current user API.
 
-
 ## Deliverables
 
 - Backend can verify user identity.
 - Frontend can communicate with backend authentication service.
 
-
 # 5. Phase 2 - User Management
-
 
 ## Objective
 
 Introduce application user management.
-
 
 ## Tasks
 
@@ -84,23 +71,23 @@ Introduce application user management.
 - Implement user activation flow.
 - Bind Firebase UID and Google provider email to application users during activation.
 - Store user activation state with `isActivated` and `activatedAt`.
+- Start activated users with an empty preferred drink list.
 - Claim activation codes after successful activation.
-
+- Implement post-activation profile setup with submitted display name.
+- Query legacy Firestore users by submitted display name during profile setup.
+- Map matching legacy `options` into drink configurations and preferred drinks during profile setup.
 
 ## Deliverables
 
 - Users can activate accounts.
 - User identity is managed by backend.
-- User activation does not depend on legacy Firebase profile migration.
-
+- User activation succeeds even when no matching legacy Firebase profile exists.
 
 # 6. Phase 3 - Authorization
-
 
 ## Objective
 
 Introduce role-based access control.
-
 
 ## Tasks
 
@@ -109,19 +96,15 @@ Introduce role-based access control.
 - Protect backend APIs.
 - Define role permissions.
 
-
 ## Deliverables
 
 Users can only access resources allowed by their role.
 
-
 # 7. Phase 4 - Backend Business APIs
-
 
 ## Objective
 
 Move business operations behind backend APIs.
-
 
 ## Tasks
 
@@ -132,14 +115,13 @@ Move business operations behind backend APIs.
 - Create preferred drink endpoints.
 - Separate drink configuration.
 
+### Legacy Preferred Drink Migration
 
-### Legacy Profile Import
-
-- Query legacy Firebase / Firestore profile after user activation.
-- Return legacy profile data for user confirmation.
-- Map legacy preferred drink data into drink configurations and preferred drinks.
-- Allow users without legacy profile data to create preferred drinks manually.
-
+- Keep legacy preferred drink migration in the post-activation profile setup workflow.
+- Query legacy Firebase / Firestore users by submitted display name.
+- Map matching legacy `options` into drink configurations and preferred drinks.
+- Allow users without legacy profile data to continue with an empty preferred drink list and create preferred drinks manually.
+- Add a separate confirmation/import flow only if duplicate legacy display names require manual resolution.
 
 ### Order API
 
@@ -147,40 +129,32 @@ Move business operations behind backend APIs.
 - Implement order status workflow.
 - Add permission validation.
 
-
 ## Deliverables
 
 Frontend no longer requires direct Firebase access for migrated features.
 
-
 # 8. Phase 5 - Data Model Migration
-
 
 ## Objective
 
 Adopt the new domain model.
 
-
 ## Tasks
 
-- Migrate legacy profile data for activated users.
+- Migrate legacy profile data during post-activation profile setup when a safe display name match exists.
 - Extract drink configurations.
 - Create preferred drink relationships.
 - Validate migrated data.
-
 
 ## Deliverables
 
 New domain model is populated and operational.
 
-
 # 9. Phase 6 - Firebase Client Access Removal
-
 
 ## Objective
 
 Complete backend transition.
-
 
 ## Tasks
 
@@ -188,14 +162,11 @@ Complete backend transition.
 - Update Firebase security rules.
 - Verify backend-only access.
 
-
 ## Deliverables
 
 Backend becomes the only application data access layer.
 
-
 # 10. Phase 7 - Future Improvements
-
 
 Possible future enhancements:
 
