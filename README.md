@@ -22,6 +22,10 @@ NestJS backend service for ScyneCoffee.
 npm install
 ```
 
+## Development Documentation
+
+See `docs/development.md` for local database setup, migration rules, seed data usage, and production deployment notes.
+
 ## Environment Setup
 
 Copy the example environment file:
@@ -50,11 +54,21 @@ Start the local database:
 docker compose up -d postgres
 ```
 
-Run Prisma migrations:
+Run existing Prisma migrations:
 
 ```bash
-npm run prisma:migrate -- --name init
+npm run prisma:migrate
 ```
+
+Seed local development activation codes:
+
+```bash
+npm run prisma:seed
+```
+
+The seed script creates random activation codes using the format `AA0000` - two uppercase letters followed by four digits. It is intended for local development/testing only.
+
+Do not use `--name init` for normal setup. Only create a named migration after changing the Prisma schema.
 
 ### Firebase Admin SDK Environment
 
@@ -135,10 +149,20 @@ npm run build
 
 ## Production
 
+Apply existing migrations in production/deployment environments:
+
+```bash
+npx prisma migrate deploy --schema prisma/schema
+```
+
+Then build and start:
+
 ```bash
 npm run build
 npm run start:prod
 ```
+
+Do not run the local development seed script automatically in production. Activation codes are business credentials and should be generated through a controlled admin/service flow.
 
 ## Test
 
