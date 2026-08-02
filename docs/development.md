@@ -62,6 +62,12 @@ Production deployments should apply existing migrations only:
 npx prisma migrate deploy --schema prisma/schema
 ```
 
+For Docker Compose deployments, use the `migrate` service. It is built from the Dockerfile `migration` target, includes the locked Prisma CLI and `prisma/schema` migration files, and runs before the API service starts:
+
+```bash
+docker compose up --build
+```
+
 Activation codes are business credentials. In production, they should be generated through a controlled admin/service flow, not through automatic deployment seed data.
 
 ## When to Create a Migration

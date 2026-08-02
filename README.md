@@ -149,7 +149,7 @@ npm run build
 
 ## Production
 
-Apply existing migrations in production/deployment environments:
+Apply existing migrations before starting the API in production/deployment environments:
 
 ```bash
 npx prisma migrate deploy --schema prisma/schema
@@ -160,6 +160,12 @@ Then build and start:
 ```bash
 npm run build
 npm run start:prod
+```
+
+For Docker Compose deployments, the `migrate` service runs the same locked Prisma CLI and migration files before the `api` service starts:
+
+```bash
+docker compose up --build
 ```
 
 Do not run the local development seed script automatically in production. Activation codes are business credentials and should be generated through a controlled admin/service flow.
@@ -184,7 +190,7 @@ Run container:
 docker run --rm -p 3000:3000 scynecoffee-backend
 ```
 
-Or use Docker Compose to start all services:
+Or use Docker Compose to start all services. This starts PostgreSQL, runs the migration job, then starts the API:
 
 ```bash
 docker compose up --build

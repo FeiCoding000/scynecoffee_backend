@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: scynecoffee_postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_DB: scynecoffee
       POSTGRES_USER: scynecoffee
@@ -11,17 +11,29 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scynecoffee -d scynecoffee"]
+      test: ['CMD-SHELL', 'pg_isready -U scynecoffee -d scynecoffee']
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: .
+      target: migration
+    container_name: scynecoffee_migrate
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://scynecoffee:scynecoffee@postgres:5432/scynecoffee?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build: .
     container_name: scynecoffee_backend
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -29,6 +41,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
