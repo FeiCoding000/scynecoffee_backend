@@ -10,6 +10,13 @@ COPY tsconfig*.json nest-cli.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
+FROM deps AS migration
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+CMD ["npx", "prisma", "migrate", "deploy", "--schema", "prisma/schema"]
+
 FROM node:22-alpine AS production
 WORKDIR /app
 
