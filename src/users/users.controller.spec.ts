@@ -33,6 +33,8 @@ describe('UsersController', () => {
       | 'getCurrentUser'
       | 'getCurrentUserPreferences'
       | 'createCurrentUserPreference'
+      | 'updateCurrentUserPreference'
+      | 'deleteCurrentUserPreference'
     >
   >;
 
@@ -42,6 +44,8 @@ describe('UsersController', () => {
       getCurrentUser: jest.fn(),
       getCurrentUserPreferences: jest.fn(),
       createCurrentUserPreference: jest.fn(),
+      updateCurrentUserPreference: jest.fn(),
+      deleteCurrentUserPreference: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -162,6 +166,67 @@ describe('UsersController', () => {
     expect(usersService.createCurrentUserPreference).toHaveBeenCalledWith(
       'Bearer valid-token',
       createDto,
+    );
+  });
+
+  it('returns updated current user preferred drink in response envelope', async () => {
+    const preferredDrink: PreferredDrinkDto = {
+      id: 'preferred-drink-1',
+      displayName: 'Afternoon Coffee',
+      drinkConfigurationId: 'drink-configuration-1',
+      sortOrder: null,
+      isDefault: false,
+      drinkConfiguration: {
+        id: 'drink-configuration-1',
+        category: DrinkCategory.COFFEE,
+        drinkType: 'Flat White',
+        milk: MilkType.FULL,
+        strength: DrinkStrength.ONE,
+        sugar: PortionAmount.ZERO,
+        sweetener: PortionAmount.ZERO,
+        teaBagCount: null,
+        powderScoops: null,
+        iced: false,
+        xhot: false,
+        decaf: false,
+      },
+    };
+
+    usersService.updateCurrentUserPreference.mockResolvedValue(preferredDrink);
+
+    const request = {
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    } as Request;
+
+    await expect(
+      controller.updateMyPreference(request, 'preferred-drink-1', {
+        displayName: 'Afternoon Coffee',
+      }),
+    ).resolves.toEqual({ data: preferredDrink });
+    expect(usersService.updateCurrentUserPreference).toHaveBeenCalledWith(
+      'Bearer valid-token',
+      'preferred-drink-1',
+      { displayName: 'Afternoon Coffee' },
+    );
+  });
+
+  it('returns empty response envelope after deleting current user preferred drink', async () => {
+    usersService.deleteCurrentUserPreference.mockResolvedValue(undefined);
+
+    const request = {
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    } as Request;
+
+    await expect(
+      controller.deleteMyPreference(request, 'preferred-drink-1'),
+    ).resolves.toEqual({ data: null });
+    expect(usersService.deleteCurrentUserPreference).toHaveBeenCalledWith(
+      'Bearer valid-token',
+      'preferred-drink-1',
     );
   });
 
