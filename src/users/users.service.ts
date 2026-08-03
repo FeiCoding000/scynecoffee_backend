@@ -17,6 +17,19 @@ export class UsersService {
     private readonly prismaService: PrismaService,
   ) {}
 
+  async getCurrentUser(
+    authorizationHeader: string | undefined,
+  ): Promise<UserDto> {
+    const { user } =
+      await this.authService.verifyAuthorizationHeader(authorizationHeader);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async activateUser(
     authorizationHeader: string | undefined,
     activateUserDto: ActivateUserDto,
