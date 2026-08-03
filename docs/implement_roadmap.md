@@ -75,7 +75,8 @@ Introduce application user management.
 - Claim activation codes after successful activation.
 - Implement post-activation profile setup with submitted display name.
 - Query legacy Firestore users by submitted display name during profile setup.
-- Map matching legacy `options` into drink configurations and preferred drinks during profile setup.
+- Return matching legacy user candidates for frontend selection.
+- Import selected legacy `options` into drink configurations and preferred drinks only after user confirmation.
 
 ## Deliverables
 
@@ -119,9 +120,11 @@ Move business operations behind backend APIs.
 
 - Keep legacy preferred drink migration in the post-activation profile setup workflow.
 - Query legacy Firebase / Firestore users by submitted display name.
-- Map matching legacy `options` into drink configurations and preferred drinks.
+- Return one or more matching legacy users as selectable candidates instead of auto-importing.
+- Add a confirmation/import flow where the user selects the legacy user to import from.
+- Map selected legacy `options` into drink configurations and preferred drinks.
 - Allow users without legacy profile data to continue with an empty preferred drink list and create preferred drinks manually.
-- Add a separate confirmation/import flow only if duplicate legacy display names require manual resolution.
+- Allow users with legacy matches to skip import and create preferred drinks manually.
 
 ### Order API
 

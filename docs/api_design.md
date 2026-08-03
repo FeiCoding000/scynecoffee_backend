@@ -284,11 +284,13 @@ Identity fields such as Firebase UID, Google email and role are not accepted fro
 
 ### Purpose
 
-Set the activated user's display name and attempt to migrate matching legacy Firestore drink options.
+Set the activated user's display name and search for matching legacy Firestore user profiles.
 
-After activation, the frontend asks the user to enter their name. The backend stores this value as the application user's `displayName` and uses it to search the legacy Firestore `users` collection. If a matching legacy profile exists, the backend maps its coupled `options` into the new preferred drink model.
+After activation, the frontend asks the user to enter their name. The backend stores this value as the application user's `displayName` and uses it to search the legacy Firestore `users` collection.
 
-If no matching legacy profile exists, the backend still updates the user's `displayName` and returns an empty preferred drink list. The user can then add preferred drinks manually from the profile page.
+If no matching legacy profile exists, the backend completes profile setup and returns an empty preferred drink list. The user can then add preferred drinks manually from the profile page.
+
+If one or more matching legacy profiles exist, the backend does not automatically import drink options. It returns the matching legacy users as candidates so the frontend can display them and let the user select the correct legacy profile.
 
 ### Authentication
 
@@ -320,17 +322,17 @@ Required.
 
     ↓
 
-    If Found: Map options to DrinkConfiguration and PreferredDrink
+    If No Match: Return Profile Created Result
 
     ↓
 
-    Return Profile Setup Result
+    If One Or More Matches: Return Legacy User Candidates
 
-### Response When Legacy Profile Exists
+### Response When Legacy Profiles Exist
 
     {
       "data": {
-        "status": "profile_mapped",
+        "status": "legacy_users_found",
         "user": {
           "id": "123",
           "displayName": "Felix",
@@ -340,7 +342,22 @@ Required.
           "status": "ACTIVE",
           "isActivated": true
         },
-        "preferredDrinkCount": 2
+        "legacyUsers": [
+          {
+            "legacyUserId": "legacy-user-1",
+            "displayName": "Felix",
+            "firstName": "Felix",
+            "lastName": "Zhang",
+            "preferredDrinkCount": 2
+          },
+          {
+            "legacyUserId": "legacy-user-2",
+            "displayName": "Felix",
+            "firstName": "Felix",
+            "lastName": "Wang",
+            "preferredDrinkCount": 1
+          }
+        ]
       }
     }
 
@@ -362,7 +379,71 @@ Required.
       }
     }
 
-If multiple legacy users match the same `displayName`, the backend must not auto-import options. It should return a conflict response so the frontend can ask the user/admin to resolve the match.
+When one or more legacy users match the submitted `displayName`, the frontend should display the returned candidates. The user may select one candidate to import from, or skip legacy import and create preferred drinks manually later.
+
+## 4.4 Import Selected Legacy Profile
+
+### Endpoint
+
+    POST /users/me/profile/import-legacy
+
+### Purpose
+
+Import preferred drinks from a user-selected legacy Firestore profile.
+
+This endpoint is called after profile setup returns `legacy_users_found` and the user selects the correct legacy profile from the candidate list.
+
+### Authentication
+
+Required.
+
+    Authorization: Bearer <firebase-id-token>
+
+### Request
+
+    {
+      "legacyUserId": "legacy-user-1"
+    }
+
+### Process
+
+    Activated User
+
+    ↓
+
+    Submit selected legacyUserId
+
+    ↓
+
+    Load Legacy Firestore user document
+
+    ↓
+
+    Map selected legacy options to DrinkConfiguration and PreferredDrink
+
+    ↓
+
+    Return Import Result
+
+### Response
+
+    {
+      "data": {
+        "status": "profile_mapped",
+        "user": {
+          "id": "123",
+          "displayName": "Felix",
+          "email": null,
+          "googleEmail": "user@example.com",
+          "role": "staff",
+          "status": "ACTIVE",
+          "isActivated": true
+        },
+        "preferredDrinkCount": 2
+      }
+    }
+
+The backend should reuse existing drink configurations where possible. If the selected legacy user has no importable `options`, the endpoint should succeed with `preferredDrinkCount` set to `0`.
 
 ---
 
