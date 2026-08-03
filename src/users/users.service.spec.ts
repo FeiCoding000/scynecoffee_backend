@@ -102,6 +102,49 @@ describe('UsersService', () => {
     );
   });
 
+  it('returns current user from verified authorization header', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+
+    await expect(service.getCurrentUser('Bearer valid-token')).resolves.toEqual(
+      {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+    );
+    expect(authService.verifyAuthorizationHeader).toHaveBeenCalledWith(
+      'Bearer valid-token',
+    );
+  });
+
+  it('throws NotFoundException when current Firebase user is not activated', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: null,
+      firebaseUser,
+      isActivated: false,
+    });
+
+    await expect(service.getCurrentUser('Bearer valid-token')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
   it('throws BadRequestException when activation code is empty', async () => {
     await expect(
       service.activateUser('Bearer valid-token', { activationCode: '   ' }),
