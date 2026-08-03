@@ -64,11 +64,11 @@ describe('UsersController', () => {
       },
     } as Request;
 
-    await expect(controller.activate(request, activateUserDto)).resolves.toEqual(
-      {
-        data: activateUserResult,
-      },
-    );
+    await expect(
+      controller.activate(request, activateUserDto),
+    ).resolves.toEqual({
+      data: activateUserResult,
+    });
     expect(usersService.activateUser).toHaveBeenCalledWith(
       'Bearer valid-token',
       activateUserDto,

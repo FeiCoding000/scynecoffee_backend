@@ -14,8 +14,7 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigins = process.env.CORS_ORIGIN
-    ?.split(',')
+  const corsOrigins = process.env.CORS_ORIGIN?.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 

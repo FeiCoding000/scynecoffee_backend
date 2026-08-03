@@ -4,12 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ActivationCodeStatus,
-  Prisma,
-  User,
-  UserStatus,
-} from '@prisma/client';
+import { ActivationCodeStatus, Prisma, User, UserStatus } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ActivateUserDto } from './dto/activate-user.dto';
@@ -32,9 +27,8 @@ export class UsersService {
       throw new BadRequestException('Activation code is required');
     }
 
-    const { firebaseUser } = await this.authService.verifyAuthorizationHeader(
-      authorizationHeader,
-    );
+    const { firebaseUser } =
+      await this.authService.verifyAuthorizationHeader(authorizationHeader);
 
     const user = await this.prismaService.$transaction(async (transaction) => {
       const code = await transaction.activationCode.findUnique({
