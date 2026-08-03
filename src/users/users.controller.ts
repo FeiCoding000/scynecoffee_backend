@@ -8,8 +8,9 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ActivateUserDto } from './dto/activate-user.dto';
+import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
 import { UsersService } from './users.service';
-import { ActivateUserResult, UserDto } from './users.types';
+import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
 
 interface ActivateUserResponse {
   data: ActivateUserResult;
@@ -17,6 +18,14 @@ interface ActivateUserResponse {
 
 interface GetCurrentUserResponse {
   data: UserDto;
+}
+
+interface PreferredDrinkListResponse {
+  data: PreferredDrinkDto[];
+}
+
+interface PreferredDrinkResponse {
+  data: PreferredDrinkDto;
 }
 
 @ApiTags('users')
@@ -34,6 +43,36 @@ export class UsersController {
     );
 
     return { data: user };
+  }
+
+  @Get('me/preferences')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user preferred drinks' })
+  @ApiOkResponse({ description: 'Current user preferred drinks' })
+  async getMyPreferences(
+    @Req() request: Request,
+  ): Promise<PreferredDrinkListResponse> {
+    const preferredDrinks = await this.usersService.getCurrentUserPreferences(
+      request.headers.authorization,
+    );
+
+    return { data: preferredDrinks };
+  }
+
+  @Post('me/preferences')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create current user preferred drink' })
+  @ApiCreatedResponse({ description: 'Preferred drink created' })
+  async createMyPreference(
+    @Req() request: Request,
+    @Body() createPreferredDrinkDto: CreatePreferredDrinkDto,
+  ): Promise<PreferredDrinkResponse> {
+    const preferredDrink = await this.usersService.createCurrentUserPreference(
+      request.headers.authorization,
+      createPreferredDrinkDto,
+    );
+
+    return { data: preferredDrink };
   }
 
   @Post('activate')

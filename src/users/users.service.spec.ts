@@ -15,12 +15,17 @@ import {
 } from '@nestjs/common';
 import {
   ActivationCodeStatus,
+  DrinkCategory,
+  DrinkStrength,
+  MilkType,
+  PortionAmount,
   Prisma,
   UserRole,
   UserStatus,
 } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { FirebaseUserContext } from '../auth/auth.types';
+import { DrinkConfigurationsService } from '../drink-configurations/drink-configurations.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { UsersService } from './users.service';
 
@@ -40,7 +45,17 @@ describe('UsersService', () => {
   let authService: jest.Mocked<Pick<AuthService, 'verifyAuthorizationHeader'>>;
   let prismaService: {
     $transaction: jest.Mock;
+    preferredDrink: {
+      findMany: jest.Mock;
+      create: jest.Mock;
+    };
+    drinkConfiguration: {
+      findUnique: jest.Mock;
+    };
   };
+  let drinkConfigurationsService: jest.Mocked<
+    Pick<DrinkConfigurationsService, 'findOrCreate'>
+  >;
   let transaction: TransactionMock;
 
   const firebaseUser: FirebaseUserContext = {
@@ -78,6 +93,9 @@ describe('UsersService', () => {
     authService = {
       verifyAuthorizationHeader: jest.fn(),
     };
+    drinkConfigurationsService = {
+      findOrCreate: jest.fn(),
+    };
 
     transaction = {
       activationCode: {
@@ -94,11 +112,19 @@ describe('UsersService', () => {
       $transaction: jest.fn((callback: (tx: TransactionMock) => unknown) =>
         callback(transaction),
       ),
+      preferredDrink: {
+        findMany: jest.fn(),
+        create: jest.fn(),
+      },
+      drinkConfiguration: {
+        findUnique: jest.fn(),
+      },
     };
 
     service = new UsersService(
       authService as unknown as AuthService,
       prismaService as unknown as PrismaService,
+      drinkConfigurationsService as unknown as DrinkConfigurationsService,
     );
   });
 
@@ -143,6 +169,304 @@ describe('UsersService', () => {
     await expect(service.getCurrentUser('Bearer valid-token')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('returns current user preferred drinks', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.preferredDrink.findMany.mockResolvedValue([
+      {
+        id: 'preferred-drink-1',
+        userId: 'user-1',
+        drinkConfigurationId: 'drink-configuration-1',
+        displayName: 'Morning Coffee',
+        sortOrder: null,
+        isDefault: false,
+        createdAt: new Date('2026-08-03T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+        drinkConfiguration: {
+          id: 'drink-configuration-1',
+          category: DrinkCategory.COFFEE,
+          drinkType: 'Flat White',
+          milk: MilkType.FULL,
+          strength: DrinkStrength.ONE,
+          sugar: PortionAmount.ZERO,
+          sweetener: PortionAmount.ZERO,
+          teaBagCount: null,
+          powderScoops: null,
+          iced: false,
+          xhot: false,
+          decaf: false,
+          createdAt: new Date('2026-08-03T00:00:00.000Z'),
+          updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+        },
+      },
+    ]);
+
+    await expect(
+      service.getCurrentUserPreferences('Bearer valid-token'),
+    ).resolves.toEqual([
+      {
+        id: 'preferred-drink-1',
+        displayName: 'Morning Coffee',
+        drinkConfigurationId: 'drink-configuration-1',
+        sortOrder: null,
+        isDefault: false,
+        drinkConfiguration: {
+          id: 'drink-configuration-1',
+          category: DrinkCategory.COFFEE,
+          drinkType: 'Flat White',
+          milk: MilkType.FULL,
+          strength: DrinkStrength.ONE,
+          sugar: PortionAmount.ZERO,
+          sweetener: PortionAmount.ZERO,
+          teaBagCount: null,
+          powderScoops: null,
+          iced: false,
+          xhot: false,
+          decaf: false,
+        },
+      },
+    ]);
+    expect(prismaService.preferredDrink.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      include: { drinkConfiguration: true },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+  });
+
+  it('creates current user preference with existing drink configuration id', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    const drinkConfiguration = {
+      id: 'drink-configuration-1',
+      category: DrinkCategory.COFFEE,
+      drinkType: 'Flat White',
+      milk: MilkType.FULL,
+      strength: DrinkStrength.ONE,
+      sugar: PortionAmount.ZERO,
+      sweetener: PortionAmount.ZERO,
+      teaBagCount: null,
+      powderScoops: null,
+      iced: false,
+      xhot: false,
+      decaf: false,
+      createdAt: new Date('2026-08-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+    };
+    prismaService.drinkConfiguration.findUnique.mockResolvedValue(
+      drinkConfiguration,
+    );
+    prismaService.preferredDrink.create.mockResolvedValue({
+      id: 'preferred-drink-1',
+      userId: 'user-1',
+      drinkConfigurationId: 'drink-configuration-1',
+      displayName: 'Morning Coffee',
+      sortOrder: null,
+      isDefault: false,
+      createdAt: new Date('2026-08-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+      drinkConfiguration,
+    });
+
+    await expect(
+      service.createCurrentUserPreference('Bearer valid-token', {
+        displayName: ' Morning Coffee ',
+        drinkConfigurationId: 'drink-configuration-1',
+      }),
+    ).resolves.toMatchObject({
+      id: 'preferred-drink-1',
+      displayName: 'Morning Coffee',
+      drinkConfigurationId: 'drink-configuration-1',
+    });
+    expect(prismaService.preferredDrink.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        drinkConfigurationId: 'drink-configuration-1',
+        displayName: 'Morning Coffee',
+      },
+      include: { drinkConfiguration: true },
+    });
+  });
+
+  it('creates current user preference with new drink configuration input', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    drinkConfigurationsService.findOrCreate.mockResolvedValue({
+      id: 'drink-configuration-1',
+      category: DrinkCategory.COFFEE,
+      drinkType: 'Flat White',
+      milk: MilkType.FULL,
+      strength: DrinkStrength.ONE,
+      sugar: PortionAmount.ZERO,
+      sweetener: PortionAmount.ZERO,
+      teaBagCount: null,
+      powderScoops: null,
+      iced: false,
+      xhot: false,
+      decaf: false,
+    });
+    prismaService.drinkConfiguration.findUnique.mockResolvedValue({
+      id: 'drink-configuration-1',
+      category: DrinkCategory.COFFEE,
+      drinkType: 'Flat White',
+      milk: MilkType.FULL,
+      strength: DrinkStrength.ONE,
+      sugar: PortionAmount.ZERO,
+      sweetener: PortionAmount.ZERO,
+      teaBagCount: null,
+      powderScoops: null,
+      iced: false,
+      xhot: false,
+      decaf: false,
+      createdAt: new Date('2026-08-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+    });
+    prismaService.preferredDrink.create.mockResolvedValue({
+      id: 'preferred-drink-1',
+      userId: 'user-1',
+      drinkConfigurationId: 'drink-configuration-1',
+      displayName: 'Morning Coffee',
+      sortOrder: null,
+      isDefault: false,
+      createdAt: new Date('2026-08-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+      drinkConfiguration: {
+        id: 'drink-configuration-1',
+        category: DrinkCategory.COFFEE,
+        drinkType: 'Flat White',
+        milk: MilkType.FULL,
+        strength: DrinkStrength.ONE,
+        sugar: PortionAmount.ZERO,
+        sweetener: PortionAmount.ZERO,
+        teaBagCount: null,
+        powderScoops: null,
+        iced: false,
+        xhot: false,
+        decaf: false,
+        createdAt: new Date('2026-08-03T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+      },
+    });
+
+    await service.createCurrentUserPreference('Bearer valid-token', {
+      displayName: 'Morning Coffee',
+      drinkConfiguration: {
+        category: DrinkCategory.COFFEE,
+        drinkType: 'Flat White',
+      },
+    });
+
+    expect(drinkConfigurationsService.findOrCreate).toHaveBeenCalledWith({
+      category: DrinkCategory.COFFEE,
+      drinkType: 'Flat White',
+    });
+  });
+
+  it('throws BadRequestException when preference create payload has neither config id nor config input', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+
+    await expect(
+      service.createCurrentUserPreference('Bearer valid-token', {
+        displayName: 'Morning Coffee',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('throws BadRequestException when preference create payload has both config id and config input', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+
+    await expect(
+      service.createCurrentUserPreference('Bearer valid-token', {
+        displayName: 'Morning Coffee',
+        drinkConfigurationId: 'drink-configuration-1',
+        drinkConfiguration: {
+          category: DrinkCategory.COFFEE,
+          drinkType: 'Flat White',
+        },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('throws NotFoundException when preference drink configuration id does not exist', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.drinkConfiguration.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.createCurrentUserPreference('Bearer valid-token', {
+        displayName: 'Morning Coffee',
+        drinkConfigurationId: 'drink-configuration-1',
+      }),
+    ).rejects.toThrow(NotFoundException);
   });
 
   it('throws BadRequestException when activation code is empty', async () => {
