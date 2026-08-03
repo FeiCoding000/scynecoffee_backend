@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import {
   ActivationCodeStatus,
+  Prisma,
   UserRole,
   UserStatus,
 } from '@prisma/client';
@@ -165,6 +166,28 @@ describe('UsersService', () => {
     transaction.user.findUnique
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(createdUser);
+
+    await expect(
+      service.activateUser('Bearer valid-token', { activationCode: 'AB1234' }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('throws ConflictException when concurrent user creation hits unique constraint', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: null,
+      firebaseUser,
+      isActivated: false,
+    });
+    transaction.activationCode.findUnique.mockResolvedValue(
+      availableActivationCode,
+    );
+    transaction.user.findUnique.mockResolvedValue(null);
+    transaction.user.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    );
 
     await expect(
       service.activateUser('Bearer valid-token', { activationCode: 'AB1234' }),

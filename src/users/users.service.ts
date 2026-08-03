@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   ActivationCodeStatus,
+  Prisma,
   User,
   UserStatus,
 } from '@prisma/client';
@@ -66,17 +67,30 @@ export class UsersService {
         }
       }
 
-      const createdUser = await transaction.user.create({
-        data: {
-          firebaseUid: firebaseUser.uid,
-          googleEmail: firebaseUser.googleEmail,
-          displayName: '',
-          role: code.role,
-          status: UserStatus.ACTIVE,
-          isActivated: true,
-          activatedAt: new Date(),
-        },
-      });
+      let createdUser: User;
+
+      try {
+        createdUser = await transaction.user.create({
+          data: {
+            firebaseUid: firebaseUser.uid,
+            googleEmail: firebaseUser.googleEmail,
+            displayName: '',
+            role: code.role,
+            status: UserStatus.ACTIVE,
+            isActivated: true,
+            activatedAt: new Date(),
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException('User is already activated');
+        }
+
+        throw error;
+      }
 
       const claimResult = await transaction.activationCode.updateMany({
         where: {
