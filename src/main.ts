@@ -11,7 +11,7 @@ async function bootstrap() {
     .filter(Boolean);
 
   app.enableCors({
-    origin: corsOrigins ?? true,
+    origin: corsOrigins ?? false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
