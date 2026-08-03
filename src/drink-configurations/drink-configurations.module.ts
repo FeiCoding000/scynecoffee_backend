@@ -5,5 +5,6 @@ import { DrinkConfigurationsService } from './drink-configurations.service';
 @Module({
   controllers: [DrinkConfigurationsController],
   providers: [DrinkConfigurationsService],
+  exports: [DrinkConfigurationsService],
 })
 export class DrinkConfigurationsModule {}

@@ -4,17 +4,32 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ActivationCodeStatus, Prisma, User, UserStatus } from '@prisma/client';
+import {
+  ActivationCodeStatus,
+  DrinkConfiguration,
+  PreferredDrink,
+  Prisma,
+  User,
+  UserStatus,
+} from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
+import { DrinkConfigurationsService } from '../drink-configurations/drink-configurations.service';
+import { DrinkConfigurationDto } from '../drink-configurations/drink-configurations.types';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ActivateUserDto } from './dto/activate-user.dto';
-import { ActivateUserResult, UserDto } from './users.types';
+import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
+import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
+
+type PreferredDrinkWithConfiguration = PreferredDrink & {
+  drinkConfiguration: DrinkConfiguration;
+};
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly authService: AuthService,
     private readonly prismaService: PrismaService,
+    private readonly drinkConfigurationsService: DrinkConfigurationsService,
   ) {}
 
   async getCurrentUser(
@@ -28,6 +43,81 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getCurrentUserPreferences(
+    authorizationHeader: string | undefined,
+  ): Promise<PreferredDrinkDto[]> {
+    const user = await this.getCurrentUser(authorizationHeader);
+
+    const preferredDrinks = await this.prismaService.preferredDrink.findMany({
+      where: { userId: user.id },
+      include: { drinkConfiguration: true },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    return preferredDrinks.map((preferredDrink) =>
+      this.toPreferredDrinkDto(preferredDrink),
+    );
+  }
+
+  async createCurrentUserPreference(
+    authorizationHeader: string | undefined,
+    createPreferredDrinkDto: CreatePreferredDrinkDto,
+  ): Promise<PreferredDrinkDto> {
+    const user = await this.getCurrentUser(authorizationHeader);
+    const displayName = createPreferredDrinkDto.displayName?.trim();
+
+    if (!displayName) {
+      throw new BadRequestException('Display name is required');
+    }
+
+    const hasDrinkConfigurationId = Boolean(
+      createPreferredDrinkDto.drinkConfigurationId,
+    );
+    const hasDrinkConfiguration = Boolean(
+      createPreferredDrinkDto.drinkConfiguration,
+    );
+
+    if (hasDrinkConfigurationId === hasDrinkConfiguration) {
+      throw new BadRequestException(
+        'Provide either drinkConfigurationId or drinkConfiguration',
+      );
+    }
+
+    let drinkConfigurationId = createPreferredDrinkDto.drinkConfigurationId;
+
+    if (createPreferredDrinkDto.drinkConfiguration) {
+      const drinkConfiguration =
+        await this.drinkConfigurationsService.findOrCreate(
+          createPreferredDrinkDto.drinkConfiguration,
+        );
+      drinkConfigurationId = drinkConfiguration.id;
+    }
+
+    if (!drinkConfigurationId) {
+      throw new BadRequestException('Drink configuration is required');
+    }
+
+    const drinkConfiguration =
+      await this.prismaService.drinkConfiguration.findUnique({
+        where: { id: drinkConfigurationId },
+      });
+
+    if (!drinkConfiguration) {
+      throw new NotFoundException('Drink configuration not found');
+    }
+
+    const preferredDrink = await this.prismaService.preferredDrink.create({
+      data: {
+        userId: user.id,
+        drinkConfigurationId,
+        displayName,
+      },
+      include: { drinkConfiguration: true },
+    });
+
+    return this.toPreferredDrinkDto(preferredDrink);
   }
 
   async activateUser(
@@ -134,6 +224,40 @@ export class UsersService {
       role: user.role,
       status: user.status,
       isActivated: user.isActivated,
+    };
+  }
+
+  private toPreferredDrinkDto(
+    preferredDrink: PreferredDrinkWithConfiguration,
+  ): PreferredDrinkDto {
+    return {
+      id: preferredDrink.id,
+      displayName: preferredDrink.displayName,
+      drinkConfigurationId: preferredDrink.drinkConfigurationId,
+      sortOrder: preferredDrink.sortOrder,
+      isDefault: preferredDrink.isDefault,
+      drinkConfiguration: this.toDrinkConfigurationDto(
+        preferredDrink.drinkConfiguration,
+      ),
+    };
+  }
+
+  private toDrinkConfigurationDto(
+    drinkConfiguration: DrinkConfiguration,
+  ): DrinkConfigurationDto {
+    return {
+      id: drinkConfiguration.id,
+      category: drinkConfiguration.category,
+      drinkType: drinkConfiguration.drinkType,
+      milk: drinkConfiguration.milk,
+      strength: drinkConfiguration.strength,
+      sugar: drinkConfiguration.sugar,
+      sweetener: drinkConfiguration.sweetener,
+      teaBagCount: drinkConfiguration.teaBagCount,
+      powderScoops: drinkConfiguration.powderScoops,
+      iced: drinkConfiguration.iced,
+      xhot: drinkConfiguration.xhot,
+      decaf: drinkConfiguration.decaf,
     };
   }
 }
