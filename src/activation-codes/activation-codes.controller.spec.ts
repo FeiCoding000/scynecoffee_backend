@@ -48,7 +48,6 @@ describe('ActivationCodesController', () => {
   it('generates activation codes in response envelope', async () => {
     const dto: GenerateActivationCodesDto = {
       count: 2,
-      role: UserRole.STAFF,
     };
     const result = {
       activationCodes: [

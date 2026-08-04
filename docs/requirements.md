@@ -112,7 +112,7 @@ The system shall:
 - support binding Firebase identities to application users during activation.
 - support setting the application user's activation state when activation succeeds.
 - create an activated application user after successful Firebase identity and activation code verification.
-- allow activated admin users to generate non-admin activation codes in `AAA000` format, with a maximum of 100 codes per request.
+- allow activated admin users to generate STAFF activation codes in `AAA000` format, with a maximum of 100 codes per request.
 - start newly activated users with an empty preferred drink list.
 - support updating the current application user's display name after activation.
 - support searching legacy Firestore customer by a submitted display name without updating the application user.

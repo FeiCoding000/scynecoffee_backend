@@ -37,16 +37,9 @@ export class ActivationCodesService {
     }
 
     const count = generateActivationCodesDto.count ?? 1;
-    const role = generateActivationCodesDto.role ?? UserRole.STAFF;
 
     if (!Number.isInteger(count) || count < 1 || count > 100) {
       throw new BadRequestException('Count must be between 1 and 100');
-    }
-
-    if (role === UserRole.ADMIN) {
-      throw new BadRequestException(
-        'Admin activation codes cannot be generated',
-      );
     }
 
     const activationCodes: ActivationCode[] = [];
@@ -56,7 +49,7 @@ export class ActivationCodesService {
 
       try {
         const activationCode = await this.prismaService.activationCode.create({
-          data: { code, role },
+          data: { code, role: UserRole.STAFF },
         });
         activationCodes.push(activationCode);
       } catch (error: unknown) {

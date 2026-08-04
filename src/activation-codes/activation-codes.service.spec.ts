@@ -12,11 +12,7 @@ jest.mock('firebase-admin/firestore', () => ({
   getFirestore: jest.fn(),
 }));
 
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ActivationCodeStatus, UserRole, UserStatus } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
@@ -86,23 +82,6 @@ describe('ActivationCodesService', () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it('throws BadRequestException when generating admin activation code', async () => {
-    authService.verifyAuthorizationHeader.mockResolvedValue({
-      user: adminUser,
-      firebaseUser: {
-        uid: 'firebase-uid-1',
-        googleEmail: 'admin@example.com',
-      },
-      isActivated: true,
-    });
-
-    await expect(
-      service.generateActivationCodes('Bearer valid-token', {
-        role: UserRole.ADMIN,
-      }),
-    ).rejects.toThrow(BadRequestException);
-  });
-
   it('generates one staff activation code by default', async () => {
     authService.verifyAuthorizationHeader.mockResolvedValue({
       user: adminUser,
@@ -144,7 +123,7 @@ describe('ActivationCodesService', () => {
     });
   });
 
-  it('generates requested number of barista activation codes', async () => {
+  it('generates requested number of staff activation codes', async () => {
     authService.verifyAuthorizationHeader.mockResolvedValue({
       user: adminUser,
       firebaseUser: {
@@ -157,7 +136,7 @@ describe('ActivationCodesService', () => {
       .mockResolvedValueOnce({
         id: 'activation-code-1',
         code: 'ABC123',
-        role: UserRole.BARISTA,
+        role: UserRole.STAFF,
         status: ActivationCodeStatus.AVAILABLE,
         claimedByUserId: null,
         claimedAt: null,
@@ -167,7 +146,7 @@ describe('ActivationCodesService', () => {
       .mockResolvedValueOnce({
         id: 'activation-code-2',
         code: 'DEF456',
-        role: UserRole.BARISTA,
+        role: UserRole.STAFF,
         status: ActivationCodeStatus.AVAILABLE,
         claimedByUserId: null,
         claimedAt: null,
@@ -177,7 +156,6 @@ describe('ActivationCodesService', () => {
 
     const result = await service.generateActivationCodes('Bearer valid-token', {
       count: 2,
-      role: UserRole.BARISTA,
     });
 
     expect(result.activationCodes).toHaveLength(2);
@@ -185,7 +163,7 @@ describe('ActivationCodesService', () => {
     expect(prismaService.activationCode.create).toHaveBeenCalledWith({
       data: {
         code: expect.stringMatching(/^[A-Z]{3}\d{3}$/) as string,
-        role: UserRole.BARISTA,
+        role: UserRole.STAFF,
       },
     });
   });
