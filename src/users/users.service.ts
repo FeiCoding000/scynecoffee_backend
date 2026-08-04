@@ -293,7 +293,6 @@ export class UsersService {
     return {
       status: 'activated',
       user: this.toUserDto(user),
-      preferredDrinkCount: 0,
     };
   }
 

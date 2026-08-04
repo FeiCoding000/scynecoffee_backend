@@ -4,19 +4,19 @@
 
 ## 背景
 
-Profile setup 阶段需要处理 legacy Firestore 用户资料和旧饮品偏好迁移。
+Profile setup 阶段需要处理 displayName 保存、legacy Firestore 用户搜索、以及旧饮品偏好迁移。为了让职责更单一，搜索、保存名字、导入拆成独立入口。
 
 新的业务流程是：
 
-1. 用户激活后提交 `displayName`。
-2. 后端把 `displayName` 保存到新的 `users.displayName`。
-3. 后端用 `displayName` 查询 legacy Firestore users。
-4. 如果没有匹配项，直接完成 profile setup，不导入 preferred drinks。
-5. 如果有 1 个或多个匹配项，后端返回候选 legacy users 列表。
-6. 前端展示候选列表，用户选择其中一个 legacy user。
-7. 后端根据用户选择的 `legacyUserId` 导入该 legacy user 的 `options`。
+1. 用户激活后输入 `displayName`。
+2. 前端调用 legacy user search API，只根据 `displayName` 查询 legacy Firestore users。
+3. Search API 返回候选 legacy users 列表；没有匹配时返回空数组。
+4. 如果没有匹配项，前端展示 no-match 结果；用户确认继续后调用 profile update API 保存 `displayName`，再进入手动 preferred drink 设置页面。
+5. 如果有 1 个或多个匹配项，前端展示候选列表，用户选择其中一个 legacy user。
+6. 前端调用 profile update API 保存确认后的 `displayName`。
+7. 前端调用 import API，后端根据用户选择的 `legacyUserId` 读取 legacy user 并导入该用户的 `options`。
 
-原则：**不要在 profile setup 阶段自动导入旧 options。导入必须由用户选择确认后触发。**
+原则：**搜索不保存 displayName，不导入旧 options。导入必须由用户选择确认后触发。**
 
 ---
 
@@ -25,7 +25,7 @@ Profile setup 阶段需要处理 legacy Firestore 用户资料和旧饮品偏好
 - 单一职责拆分。
 - 每个类/服务都容易 mock。
 - 每个业务分支都容易写单元测试。
-- 先实现 profile setup 候选列表逻辑，再根据真实 Firestore option schema 实现 drink mapping。
+- 先实现 legacy user search 候选列表逻辑，再根据真实 Firestore option schema 实现 drink mapping。
 
 ---
 
@@ -126,25 +126,24 @@ toCandidate(legacyUser: LegacyUser): LegacyUserCandidateDto
 
 ---
 
-## 4. Profile Setup Service
+## 4. Legacy User Search Service
 
-建议新增独立服务，或在 `UsersService` 中只保留很薄的入口：
+建议新增：
 
 ```ts
-ProfileSetupService
+LegacyUserSearchService
 ```
 
 职责：
 
-- 验证当前应用用户存在并已激活。
 - 校验并 trim `displayName`。
-- 更新 PostgreSQL `users.displayName`。
 - 调用 `LegacyUsersRepository.findByDisplayName(displayName)`。
-- 如果无匹配，返回 `profile_created`。
-- 如果有 1 个或多个匹配，返回 `legacy_users_found` 和候选列表。
+- 把结果映射成候选列表。
+- 没有匹配时返回空数组。
 
 不负责：
 
+- 更新 PostgreSQL `users.displayName`。
 - Firestore SDK 细节。
 - legacy drink option mapping。
 - `DrinkConfiguration` 创建。
@@ -153,29 +152,20 @@ ProfileSetupService
 返回类型建议：
 
 ```ts
-type SetupProfileResult =
-  | {
-      status: 'profile_created';
-      user: UserDto;
-      preferredDrinkCount: 0;
-    }
-  | {
-      status: 'legacy_users_found';
-      user: UserDto;
-      legacyUsers: LegacyUserCandidateDto[];
-    };
+interface SearchLegacyUsersResult {
+  legacyUsers: LegacyUserCandidateDto[];
+}
 ```
 
 单元测试重点：
 
 - `displayName` 为空时报 `BadRequestException`。
-- 当前用户不存在时报 `NotFoundException`。
-- 当前用户未激活时报错。
-- 无 legacy match 时返回 `profile_created`。
-- 1 个 legacy match 时返回 `legacy_users_found`。
-- 多个 legacy match 时也返回 `legacy_users_found`。
-- profile setup 阶段不会创建 preferred drinks。
-- profile setup 阶段不会调用 drink mapping。
+- 无 legacy match 时返回 `legacyUsers: []`。
+- 1 个 legacy match 时返回一个候选。
+- 多个 legacy match 时返回多个候选。
+- search 阶段不会更新 `users.displayName`。
+- search 阶段不会创建 preferred drinks。
+- search 阶段不会调用 drink mapping。
 
 ---
 
@@ -245,9 +235,9 @@ importSelectedLegacyProfile(
 
 ```ts
 interface LegacyProfileImportResult {
-  status: 'profile_mapped';
+  status: 'legacy_profile_imported';
   user: UserDto;
-  preferredDrinkCount: number;
+  importedPreferredDrinkCount: number;
 }
 ```
 
@@ -257,7 +247,7 @@ interface LegacyProfileImportResult {
 - 当前用户未激活时报错。
 - `legacyUserId` 为空时报 `BadRequestException`。
 - legacy user 不存在时报 `NotFoundException`。
-- legacy user 没有 options 时返回 `preferredDrinkCount = 0`。
+- legacy user 没有 options 时返回 `importedPreferredDrinkCount = 0`。
 - mapper 返回 `null` 的 option 被跳过。
 - 每个有效 option 都调用 `DrinkConfigurationsService.findOrCreate`。
 - 每个有效 option 都创建 `PreferredDrink`。
@@ -273,12 +263,37 @@ interface LegacyProfileImportResult {
 
 ---
 
-## 7. Controller 层
+## 7. Current User Profile Update Service
 
-新增两个 endpoint：
+建议在 `UsersService` 或独立 `CurrentUserProfileService` 中实现：
+
+```ts
+updateCurrentUserProfile(
+  authorizationHeader: string | undefined,
+  updateProfileDto: UpdateCurrentUserProfileDto,
+): Promise<UserDto>
+```
+
+职责：
+
+- 验证当前应用用户存在并已激活。
+- 校验并 trim `displayName`。
+- 更新 PostgreSQL `users.displayName`。
+- 返回更新后的 `UserDto`。
+
+不负责：
+
+- 搜索 Firestore。
+- 导入 legacy options。
+- 创建 preferred drinks。
+
+## 8. Controller 层
+
+新增三个 endpoint：
 
 ```http
-POST /users/me/profile/setup
+POST /legacy-users/search
+PATCH /users/me/profile
 POST /users/me/profile/import-legacy
 ```
 
@@ -308,14 +323,16 @@ Controller 不负责：
 1. 定义 DTO / Types / Response shape。
 2. 实现 `LegacyUsersRepository`。
 3. 实现 `LegacyUserCandidateMapper`。
-4. 实现 `ProfileSetupService`。
-5. 补 profile setup 单元测试。
-6. 获取并确认真实 Firestore `options` schema。
-7. 实现 `LegacyDrinkOptionMapper`。
-8. 实现 `LegacyProfileImportService`。
-9. 补 import 单元测试。
-10. 接 controller endpoint。
-11. 补 controller 单元测试。
+4. 实现 `LegacyUserSearchService`。
+5. 补 legacy user search 单元测试。
+6. 实现 current user profile update DTO/service。
+7. 补 profile update 单元测试。
+8. 获取并确认真实 Firestore `options` schema。
+9. 实现 `LegacyDrinkOptionMapper`。
+10. 实现 `LegacyProfileImportService`。
+11. 补 import 单元测试。
+12. 接 controller endpoint。
+13. 补 controller 单元测试。
 
 ---
 

@@ -73,8 +73,8 @@ Introduce application user management.
 - Store user activation state with `isActivated` and `activatedAt`.
 - Start activated users with an empty preferred drink list.
 - Claim activation codes after successful activation.
-- Implement post-activation profile setup with submitted display name.
-- Query legacy Firestore users by submitted display name during profile setup.
+- Implement post-activation current-user profile update with submitted display name.
+- Implement legacy Firestore user search by submitted display name without updating the application user.
 - Return matching legacy user candidates for frontend selection.
 - Import selected legacy `options` into drink configurations and preferred drinks only after user confirmation.
 
@@ -118,12 +118,13 @@ Move business operations behind backend APIs.
 
 ### Legacy Preferred Drink Migration
 
-- Keep legacy preferred drink migration in the post-activation profile setup workflow.
-- Query legacy Firebase / Firestore users by submitted display name.
+- Keep legacy preferred drink migration as a user-confirmed post-activation flow.
+- Query legacy Firebase / Firestore users by submitted display name through a search-only endpoint.
 - Return one or more matching legacy users as selectable candidates instead of auto-importing.
+- Add a separate current-user profile update endpoint for saving confirmed display names.
 - Add a confirmation/import flow where the user selects the legacy user to import from.
 - Map selected legacy `options` into drink configurations and preferred drinks.
-- Allow users without legacy profile data to continue with an empty preferred drink list and create preferred drinks manually.
+- Allow users without legacy profile data to continue to manual preferred drink setup.
 - Allow users with legacy matches to skip import and create preferred drinks manually.
 
 ### Order API
@@ -144,7 +145,7 @@ Adopt the new domain model.
 
 ## Tasks
 
-- Migrate legacy profile data during post-activation profile setup when a safe display name match exists.
+- Migrate legacy profile data only after the user selects a legacy profile candidate.
 - Extract drink configurations.
 - Create preferred drink relationships.
 - Validate migrated data.

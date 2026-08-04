@@ -14,7 +14,6 @@ export interface UserDto {
 export interface ActivateUserResult {
   status: 'activated';
   user: UserDto;
-  preferredDrinkCount: 0;
 }
 
 export interface PreferredDrinkDto {

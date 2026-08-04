@@ -708,7 +708,7 @@ describe('UsersService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it('creates activated user, claims activation code, and returns preferredDrinkCount zero', async () => {
+  it('creates activated user and claims activation code', async () => {
     authService.verifyAuthorizationHeader.mockResolvedValue({
       user: null,
       firebaseUser,
@@ -764,7 +764,6 @@ describe('UsersService', () => {
         status: UserStatus.ACTIVE,
         isActivated: true,
       },
-      preferredDrinkCount: 0,
     });
   });
 

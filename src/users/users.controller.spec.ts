@@ -245,7 +245,6 @@ describe('UsersController', () => {
         status: UserStatus.ACTIVE,
         isActivated: true,
       },
-      preferredDrinkCount: 0,
     };
 
     usersService.activateUser.mockResolvedValue(activateUserResult);
