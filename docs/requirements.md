@@ -114,8 +114,8 @@ The system shall:
 - create an activated application user after successful Firebase identity and activation code verification.
 - start newly activated users with an empty preferred drink list.
 - support updating the current application user's display name after activation.
-- support searching legacy Firestore users by a submitted display name without updating the application user.
-- return matching legacy Firebase profiles as search candidates.
+- support searching legacy Firestore customer by a submitted display name without updating the application user.
+- return matching legacy Firebase customer profiles as search candidates.
 - allow users with no matching legacy Firebase profile to continue to manual preferred drink setup.
 - require user confirmation of a selected legacy profile before importing legacy `options` into the new preferred drink model.
 

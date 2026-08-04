@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { DrinkConfigurationDto } from '../drink-configurations/drink-configurati
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ActivateUserDto } from './dto/activate-user.dto';
 import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
+import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UpdatePreferredDrinkDto } from './dto/update-preferred-drink.dto';
 import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
 
@@ -44,6 +46,25 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async updateCurrentUserProfile(
+    authorizationHeader: string | undefined,
+    updateCurrentUserProfileDto: UpdateCurrentUserProfileDto,
+  ): Promise<UserDto> {
+    const user = await this.getCurrentActivatedUser(authorizationHeader);
+    const displayName = updateCurrentUserProfileDto.displayName.trim();
+
+    if (!displayName) {
+      throw new BadRequestException('Display name is required');
+    }
+
+    const updatedUser = await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { displayName },
+    });
+
+    return this.toUserDto(updatedUser);
   }
 
   async getCurrentUserPreferences(
@@ -294,6 +315,18 @@ export class UsersService {
       status: 'activated',
       user: this.toUserDto(user),
     };
+  }
+
+  private async getCurrentActivatedUser(
+    authorizationHeader: string | undefined,
+  ): Promise<UserDto> {
+    const user = await this.getCurrentUser(authorizationHeader);
+
+    if (!user.isActivated) {
+      throw new ForbiddenException('User is not activated');
+    }
+
+    return user;
   }
 
   private async resolveDrinkConfigurationId(

@@ -253,7 +253,7 @@ Application User Lookup or Activation Binding
 
 Authenticated User Context
 
-Legacy Firestore profile lookup is part of the post-activation profile setup workflow when migrating existing preferred drinks. The frontend submits a display name to a legacy-user search endpoint, and the backend uses that value only to search the legacy Firestore user collection. Saving the application user's `displayName` is handled by a separate current-user profile update endpoint. If no matching legacy profile exists, search returns `legacyUsers: []`; the user can then confirm the display name and add drinks manually through the preferred-drink endpoints.
+Legacy Firestore profile lookup is part of the post-activation profile setup workflow when migrating existing preferred drinks. The frontend submits a display name to a legacy-user search endpoint, and the backend uses that value only to search the legacy Firestore customer collection. Saving the application user's `displayName` is handled by a separate current-user profile update endpoint. If no matching legacy profile exists, search returns `legacyUsers: []`; the user can then confirm the display name and add drinks manually through the preferred-drink endpoints.
 
 ↓
 

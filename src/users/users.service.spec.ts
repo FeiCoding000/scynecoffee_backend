@@ -11,6 +11,7 @@ jest.mock('firebase-admin/auth', () => ({
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -48,12 +49,16 @@ describe('UsersService', () => {
     preferredDrink: {
       findMany: jest.Mock;
       findFirst: jest.Mock;
+      count: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
       deleteMany: jest.Mock;
     };
     drinkConfiguration: {
       findUnique: jest.Mock;
+    };
+    user: {
+      update: jest.Mock;
     };
   };
   let drinkConfigurationsService: jest.Mocked<
@@ -99,7 +104,6 @@ describe('UsersService', () => {
     drinkConfigurationsService = {
       findOrCreate: jest.fn(),
     };
-
     transaction = {
       activationCode: {
         findUnique: jest.fn(),
@@ -118,12 +122,16 @@ describe('UsersService', () => {
       preferredDrink: {
         findMany: jest.fn(),
         findFirst: jest.fn(),
+        count: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
         deleteMany: jest.fn(),
       },
       drinkConfiguration: {
         findUnique: jest.fn(),
+      },
+      user: {
+        update: jest.fn(),
       },
     };
 
@@ -175,6 +183,58 @@ describe('UsersService', () => {
     await expect(service.getCurrentUser('Bearer valid-token')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('throws ForbiddenException when updating profile for unactivated user', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: '',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: false,
+      },
+      firebaseUser,
+      isActivated: false,
+    });
+
+    await expect(
+      service.updateCurrentUserProfile('Bearer valid-token', {
+        displayName: 'Chloe Woodburn',
+      }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('updates current user displayName', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: '',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.user.update.mockResolvedValue({
+      ...createdUser,
+      displayName: 'Chloe Woodburn',
+    });
+
+    await expect(
+      service.updateCurrentUserProfile('Bearer valid-token', {
+        displayName: ' Chloe Woodburn ',
+      }),
+    ).resolves.toMatchObject({ displayName: 'Chloe Woodburn' });
+    expect(prismaService.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { displayName: 'Chloe Woodburn' },
+    });
   });
 
   it('returns current user preferred drinks', async () => {
