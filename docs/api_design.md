@@ -448,7 +448,9 @@ Required.
       }
     }
 
-The backend should reuse existing drink configurations where possible. If the selected legacy user has no importable `options`, the endpoint should succeed with `importedPreferredDrinkCount` set to `0`.
+The backend should reuse existing drink configurations where possible. If the selected legacy customer has no importable `options`, the endpoint should succeed with `importedPreferredDrinkCount` set to `0`.
+
+Legacy import is a one-time profile setup action. If the current user already has any preferred drinks, the backend rejects legacy import with `409 Conflict` to prevent duplicate imports or mixing manual drinks with imported legacy drinks.
 
 ---
 

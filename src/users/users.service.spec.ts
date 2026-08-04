@@ -135,6 +135,8 @@ describe('UsersService', () => {
       },
     };
 
+    prismaService.preferredDrink.count.mockResolvedValue(0);
+
     service = new UsersService(
       authService as unknown as AuthService,
       prismaService as unknown as PrismaService,
@@ -350,8 +352,8 @@ describe('UsersService', () => {
       userId: 'user-1',
       drinkConfigurationId: 'drink-configuration-1',
       displayName: 'Morning Coffee',
-      sortOrder: null,
-      isDefault: false,
+      sortOrder: 0,
+      isDefault: true,
       createdAt: new Date('2026-08-03T00:00:00.000Z'),
       updatedAt: new Date('2026-08-03T00:00:00.000Z'),
       drinkConfiguration,
@@ -372,6 +374,8 @@ describe('UsersService', () => {
         userId: 'user-1',
         drinkConfigurationId: 'drink-configuration-1',
         displayName: 'Morning Coffee',
+        sortOrder: 0,
+        isDefault: true,
       },
       include: { drinkConfiguration: true },
     });

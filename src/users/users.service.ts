@@ -130,11 +130,18 @@ export class UsersService {
       throw new NotFoundException('Drink configuration not found');
     }
 
+    const existingPreferredDrinkCount =
+      await this.prismaService.preferredDrink.count({
+        where: { userId: user.id },
+      });
+
     const preferredDrink = await this.prismaService.preferredDrink.create({
       data: {
         userId: user.id,
         drinkConfigurationId,
         displayName,
+        sortOrder: existingPreferredDrinkCount,
+        isDefault: existingPreferredDrinkCount === 0,
       },
       include: { drinkConfiguration: true },
     });

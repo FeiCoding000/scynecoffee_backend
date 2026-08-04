@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { DrinkConfigurationsService } from '../drink-configurations/drink-configurations.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { UserDto } from '../users/users.types';
@@ -18,9 +18,14 @@ export class LegacyPreferredDrinkImportService {
       await this.prismaService.preferredDrink.count({
         where: { userId: user.id },
       });
+
+    if (existingPreferredDrinkCount > 0) {
+      throw new ConflictException('User already has preferred drinks');
+    }
+
     let importedPreferredDrinkCount = 0;
 
-    for (const [sortOrder, option] of legacyUser.options.entries()) {
+    for (const option of legacyUser.options) {
       const mappedOption = this.legacyDrinkOptionMapper.map(option);
 
       if (!mappedOption) {
@@ -37,10 +42,8 @@ export class LegacyPreferredDrinkImportService {
           userId: user.id,
           drinkConfigurationId: drinkConfiguration.id,
           displayName: mappedOption.displayName,
-          sortOrder,
-          isDefault:
-            existingPreferredDrinkCount === 0 &&
-            importedPreferredDrinkCount === 0,
+          sortOrder: importedPreferredDrinkCount,
+          isDefault: importedPreferredDrinkCount === 0,
         },
       });
 
