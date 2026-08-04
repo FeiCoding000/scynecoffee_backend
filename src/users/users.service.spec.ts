@@ -47,7 +47,10 @@ describe('UsersService', () => {
     $transaction: jest.Mock;
     preferredDrink: {
       findMany: jest.Mock;
+      findFirst: jest.Mock;
       create: jest.Mock;
+      update: jest.Mock;
+      deleteMany: jest.Mock;
     };
     drinkConfiguration: {
       findUnique: jest.Mock;
@@ -114,7 +117,10 @@ describe('UsersService', () => {
       ),
       preferredDrink: {
         findMany: jest.fn(),
+        findFirst: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
+        deleteMany: jest.fn(),
       },
       drinkConfiguration: {
         findUnique: jest.fn(),
@@ -469,6 +475,147 @@ describe('UsersService', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
+  it('updates current user preference display name', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.preferredDrink.findFirst.mockResolvedValue({
+      id: 'preferred-drink-1',
+      userId: 'user-1',
+    });
+    prismaService.preferredDrink.update.mockResolvedValue({
+      id: 'preferred-drink-1',
+      userId: 'user-1',
+      drinkConfigurationId: 'drink-configuration-1',
+      displayName: 'Afternoon Coffee',
+      sortOrder: null,
+      isDefault: false,
+      createdAt: new Date('2026-08-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+      drinkConfiguration: {
+        id: 'drink-configuration-1',
+        category: DrinkCategory.COFFEE,
+        drinkType: 'Flat White',
+        milk: MilkType.FULL,
+        strength: DrinkStrength.ONE,
+        sugar: PortionAmount.ZERO,
+        sweetener: PortionAmount.ZERO,
+        teaBagCount: null,
+        powderScoops: null,
+        iced: false,
+        xhot: false,
+        decaf: false,
+        createdAt: new Date('2026-08-03T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-03T00:00:00.000Z'),
+      },
+    });
+
+    await expect(
+      service.updateCurrentUserPreference(
+        'Bearer valid-token',
+        'preferred-drink-1',
+        { displayName: ' Afternoon Coffee ' },
+      ),
+    ).resolves.toMatchObject({
+      id: 'preferred-drink-1',
+      displayName: 'Afternoon Coffee',
+    });
+    expect(prismaService.preferredDrink.findFirst).toHaveBeenCalledWith({
+      where: { id: 'preferred-drink-1', userId: 'user-1' },
+    });
+    expect(prismaService.preferredDrink.update).toHaveBeenCalledWith({
+      where: { id: 'preferred-drink-1' },
+      data: { displayName: 'Afternoon Coffee' },
+      include: { drinkConfiguration: true },
+    });
+  });
+
+  it('throws NotFoundException when updating another user preferred drink', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.preferredDrink.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.updateCurrentUserPreference(
+        'Bearer valid-token',
+        'preferred-drink-1',
+        { displayName: 'Afternoon Coffee' },
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('deletes current user preference', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.preferredDrink.deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      service.deleteCurrentUserPreference(
+        'Bearer valid-token',
+        'preferred-drink-1',
+      ),
+    ).resolves.toBeUndefined();
+    expect(prismaService.preferredDrink.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'preferred-drink-1', userId: 'user-1' },
+    });
+  });
+
+  it('throws NotFoundException when deleting another user preferred drink', async () => {
+    authService.verifyAuthorizationHeader.mockResolvedValue({
+      user: {
+        id: 'user-1',
+        displayName: 'Test User',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      firebaseUser,
+      isActivated: true,
+    });
+    prismaService.preferredDrink.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      service.deleteCurrentUserPreference(
+        'Bearer valid-token',
+        'preferred-drink-1',
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
   it('throws BadRequestException when activation code is empty', async () => {
     await expect(
       service.activateUser('Bearer valid-token', { activationCode: '   ' }),
@@ -561,7 +708,7 @@ describe('UsersService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it('creates activated user, claims activation code, and returns preferredDrinkCount zero', async () => {
+  it('creates activated user and claims activation code', async () => {
     authService.verifyAuthorizationHeader.mockResolvedValue({
       user: null,
       firebaseUser,
@@ -617,7 +764,6 @@ describe('UsersService', () => {
         status: UserStatus.ACTIVE,
         isActivated: true,
       },
-      preferredDrinkCount: 0,
     });
   });
 

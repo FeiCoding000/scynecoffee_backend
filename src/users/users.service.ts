@@ -18,6 +18,7 @@ import { DrinkConfigurationDto } from '../drink-configurations/drink-configurati
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ActivateUserDto } from './dto/activate-user.dto';
 import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
+import { UpdatePreferredDrinkDto } from './dto/update-preferred-drink.dto';
 import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
 
 type PreferredDrinkWithConfiguration = PreferredDrink & {
@@ -120,6 +121,87 @@ export class UsersService {
     return this.toPreferredDrinkDto(preferredDrink);
   }
 
+  async updateCurrentUserPreference(
+    authorizationHeader: string | undefined,
+    preferredDrinkId: string,
+    updatePreferredDrinkDto: UpdatePreferredDrinkDto,
+  ): Promise<PreferredDrinkDto> {
+    const user = await this.getCurrentUser(authorizationHeader);
+
+    const existingPreferredDrink =
+      await this.prismaService.preferredDrink.findFirst({
+        where: { id: preferredDrinkId, userId: user.id },
+      });
+
+    if (!existingPreferredDrink) {
+      throw new NotFoundException('Preferred drink not found');
+    }
+
+    const data: Prisma.PreferredDrinkUpdateInput = {};
+
+    if (updatePreferredDrinkDto.displayName !== undefined) {
+      const displayName = updatePreferredDrinkDto.displayName.trim();
+
+      if (!displayName) {
+        throw new BadRequestException('Display name is required');
+      }
+
+      data.displayName = displayName;
+    }
+
+    if (updatePreferredDrinkDto.isDefault !== undefined) {
+      data.isDefault = updatePreferredDrinkDto.isDefault;
+    }
+
+    const hasDrinkConfigurationId = Boolean(
+      updatePreferredDrinkDto.drinkConfigurationId,
+    );
+    const hasDrinkConfiguration = Boolean(
+      updatePreferredDrinkDto.drinkConfiguration,
+    );
+
+    if (hasDrinkConfigurationId && hasDrinkConfiguration) {
+      throw new BadRequestException(
+        'Provide either drinkConfigurationId or drinkConfiguration',
+      );
+    }
+
+    if (hasDrinkConfigurationId || hasDrinkConfiguration) {
+      const drinkConfigurationId = await this.resolveDrinkConfigurationId(
+        updatePreferredDrinkDto.drinkConfigurationId,
+        updatePreferredDrinkDto.drinkConfiguration,
+      );
+      data.drinkConfiguration = { connect: { id: drinkConfigurationId } };
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('No preferred drink updates provided');
+    }
+
+    const preferredDrink = await this.prismaService.preferredDrink.update({
+      where: { id: existingPreferredDrink.id },
+      data,
+      include: { drinkConfiguration: true },
+    });
+
+    return this.toPreferredDrinkDto(preferredDrink);
+  }
+
+  async deleteCurrentUserPreference(
+    authorizationHeader: string | undefined,
+    preferredDrinkId: string,
+  ): Promise<void> {
+    const user = await this.getCurrentUser(authorizationHeader);
+
+    const deleteResult = await this.prismaService.preferredDrink.deleteMany({
+      where: { id: preferredDrinkId, userId: user.id },
+    });
+
+    if (deleteResult.count !== 1) {
+      throw new NotFoundException('Preferred drink not found');
+    }
+  }
+
   async activateUser(
     authorizationHeader: string | undefined,
     activateUserDto: ActivateUserDto,
@@ -211,8 +293,36 @@ export class UsersService {
     return {
       status: 'activated',
       user: this.toUserDto(user),
-      preferredDrinkCount: 0,
     };
+  }
+
+  private async resolveDrinkConfigurationId(
+    drinkConfigurationId: string | undefined,
+    drinkConfigurationInput: CreatePreferredDrinkDto['drinkConfiguration'],
+  ): Promise<string> {
+    if (drinkConfigurationInput) {
+      const drinkConfiguration =
+        await this.drinkConfigurationsService.findOrCreate(
+          drinkConfigurationInput,
+        );
+
+      return drinkConfiguration.id;
+    }
+
+    if (!drinkConfigurationId) {
+      throw new BadRequestException('Drink configuration is required');
+    }
+
+    const drinkConfiguration =
+      await this.prismaService.drinkConfiguration.findUnique({
+        where: { id: drinkConfigurationId },
+      });
+
+    if (!drinkConfiguration) {
+      throw new NotFoundException('Drink configuration not found');
+    }
+
+    return drinkConfigurationId;
   }
 
   private toUserDto(user: User): UserDto {

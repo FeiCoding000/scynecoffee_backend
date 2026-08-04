@@ -214,18 +214,23 @@ Activation state is stored on the User record with `isActivated` and `activatedA
 
 ## Profile Setup and Legacy Preferred Drink Migration
 
-Existing Firestore user documents contain coupled profile data and drink `options`. After activation, the frontend asks the user to enter their name. The backend stores that value as the application user's `displayName`, uses it to search the legacy Firestore `users` collection, and migrates matching `options` when available.
+Existing Firestore user documents contain coupled profile data and drink `options`. After activation, the frontend asks the user to enter their name and searches legacy Firestore users by that submitted display name.
+
+Legacy user search is intentionally separate from application profile updates. The search endpoint only returns matching legacy candidates and does not update `users.displayName`, import `options`, or create preferred drinks.
+
+Legacy preferred drink import must be user-confirmed. The backend must not automatically import legacy `options` when a matching legacy profile is found. The frontend displays the search results and the user selects the correct legacy profile before import.
 
 The migration process should:
 
-- Require an already activated application user.
-- Update the application user's `displayName` from the submitted name.
-- Use `displayName` as the legacy Firestore user lookup key.
-- Preserve user preferences when matching legacy `options` exist.
-- Map legacy drink options into `DrinkConfiguration` and `PreferredDrink` records during profile setup.
+- Require an already activated application user for profile updates and legacy import.
+- Use submitted `displayName` as the legacy Firestore user lookup key in the search endpoint.
+- Return `legacyUsers: []` when no legacy users match.
+- Return a candidate list when one or more legacy users match, and do not import `options` yet.
+- Update the application user's `displayName` through a separate current-user profile update endpoint after the user confirms the name.
+- Import legacy drink `options` only after the user selects a specific legacy user candidate.
+- Map selected legacy drink options into `DrinkConfiguration` and `PreferredDrink` records.
 - Reuse existing drink configurations where repeated drink settings already exist.
-- Allow users with no matching legacy profile to continue with an empty preferred drink list and create preferred drinks manually later.
-- Avoid automatic import when multiple legacy users match the same `displayName`; return a conflict that requires resolution.
+- Allow users to skip legacy import and create preferred drinks manually later.
 
 ---
 

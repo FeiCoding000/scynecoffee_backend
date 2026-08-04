@@ -154,9 +154,9 @@ Examples:
 
 - User activation.
 - Firebase identity binding during activation.
-- Profile setup after activation.
-- Legacy Firestore user lookup by display name during profile setup.
-- Legacy preferred drink migration from coupled Firestore `options` during profile setup.
+- Profile update after activation.
+- Legacy Firestore user search by submitted display name.
+- User-confirmed legacy preferred drink import from coupled Firestore `options`.
 - Manual preferred drink creation when no matching legacy profile exists.
 - Order status transition.
 - Permission validation.
@@ -253,7 +253,7 @@ Application User Lookup or Activation Binding
 
 Authenticated User Context
 
-Legacy Firestore profile lookup is part of the post-activation profile setup workflow when migrating existing preferred drinks. The submitted `displayName` is stored on the application user and used to find the legacy Firestore user document because legacy drink `options` are coupled to that document. If no matching legacy profile exists, the user continues with an empty preferred drink list and can add drinks manually.
+Legacy Firestore profile lookup is part of the post-activation profile setup workflow when migrating existing preferred drinks. The frontend submits a display name to a legacy-user search endpoint, and the backend uses that value only to search the legacy Firestore user collection. Saving the application user's `displayName` is handled by a separate current-user profile update endpoint. If no matching legacy profile exists, search returns `legacyUsers: []`; the user can then confirm the display name and add drinks manually through the preferred-drink endpoints.
 
 ↓
 
@@ -388,7 +388,7 @@ Migrate existing Firebase data structures into the new domain model.
 Migration areas:
 
 - User.
-- Legacy Firestore user lookup by display name during profile setup.
+- Legacy Firestore user search by submitted display name.
 - Preferred Drinks.
 - Drink Configurations.
 - Orders.
