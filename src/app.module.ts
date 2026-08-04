@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { DrinkConfigurationsModule } from './drink-configurations/drink-configurations.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { FirebaseModule } from './infrastructure/firebase/firebase.module';
+import { LegacyModule } from './legacy/legacy.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     DrinkConfigurationsModule,
+    LegacyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

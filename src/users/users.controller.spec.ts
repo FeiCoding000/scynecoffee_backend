@@ -10,6 +10,7 @@ jest.mock('firebase-admin/auth', () => ({
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request } from 'express';
+import { LegacyProfileImportService } from '../legacy/legacy-profile-import.service';
 import {
   DrinkCategory,
   DrinkStrength,
@@ -20,6 +21,8 @@ import {
 } from '@prisma/client';
 import { ActivateUserDto } from './dto/activate-user.dto';
 import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
+import { ImportLegacyProfileDto } from './dto/import-legacy-profile.dto';
+import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
@@ -35,7 +38,11 @@ describe('UsersController', () => {
       | 'createCurrentUserPreference'
       | 'updateCurrentUserPreference'
       | 'deleteCurrentUserPreference'
+      | 'updateCurrentUserProfile'
     >
+  >;
+  let legacyProfileImportService: jest.Mocked<
+    Pick<LegacyProfileImportService, 'importSelectedLegacyProfile'>
   >;
 
   beforeEach(async () => {
@@ -46,6 +53,10 @@ describe('UsersController', () => {
       createCurrentUserPreference: jest.fn(),
       updateCurrentUserPreference: jest.fn(),
       deleteCurrentUserPreference: jest.fn(),
+      updateCurrentUserProfile: jest.fn(),
+    };
+    legacyProfileImportService = {
+      importSelectedLegacyProfile: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -54,6 +65,10 @@ describe('UsersController', () => {
         {
           provide: UsersService,
           useValue: usersService,
+        },
+        {
+          provide: LegacyProfileImportService,
+          useValue: legacyProfileImportService,
         },
       ],
     }).compile();
@@ -84,6 +99,71 @@ describe('UsersController', () => {
     expect(usersService.getCurrentUser).toHaveBeenCalledWith(
       'Bearer valid-token',
     );
+  });
+
+  it('updates current user profile in response envelope', async () => {
+    const updateCurrentUserProfileDto: UpdateCurrentUserProfileDto = {
+      displayName: 'Chloe Woodburn',
+    };
+    const user: UserDto = {
+      id: 'user-1',
+      displayName: 'Chloe Woodburn',
+      email: null,
+      googleEmail: 'user@example.com',
+      role: UserRole.STAFF,
+      status: UserStatus.ACTIVE,
+      isActivated: true,
+    };
+    const request = {
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    } as Request;
+
+    usersService.updateCurrentUserProfile.mockResolvedValue(user);
+
+    await expect(
+      controller.updateMyProfile(request, updateCurrentUserProfileDto),
+    ).resolves.toEqual({ data: user });
+    expect(usersService.updateCurrentUserProfile).toHaveBeenCalledWith(
+      'Bearer valid-token',
+      updateCurrentUserProfileDto,
+    );
+  });
+
+  it('imports selected legacy profile in response envelope', async () => {
+    const importLegacyProfileDto: ImportLegacyProfileDto = {
+      legacyUserId: 'legacy-user-1',
+    };
+    const result = {
+      status: 'legacy_profile_imported' as const,
+      user: {
+        id: 'user-1',
+        displayName: 'Chloe Woodburn',
+        email: null,
+        googleEmail: 'user@example.com',
+        role: UserRole.STAFF,
+        status: UserStatus.ACTIVE,
+        isActivated: true,
+      },
+      importedPreferredDrinkCount: 2,
+    };
+    const request = {
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    } as Request;
+
+    legacyProfileImportService.importSelectedLegacyProfile.mockResolvedValue(
+      result,
+    );
+
+    await expect(
+      controller.importLegacyProfile(request, importLegacyProfileDto),
+    ).resolves.toEqual({ data: result });
+    expect(
+      legacyProfileImportService.importSelectedLegacyProfile,
+    ).toHaveBeenCalledWith('Bearer valid-token', 'legacy-user-1');
   });
 
   it('returns current user preferred drinks in response envelope', async () => {

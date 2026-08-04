@@ -18,8 +18,12 @@ import {
 import type { Request } from 'express';
 import { ActivateUserDto } from './dto/activate-user.dto';
 import { CreatePreferredDrinkDto } from './dto/create-preferred-drink.dto';
+import { ImportLegacyProfileDto } from './dto/import-legacy-profile.dto';
+import { UpdateCurrentUserProfileDto } from './dto/update-current-user-profile.dto';
 import { UpdatePreferredDrinkDto } from './dto/update-preferred-drink.dto';
 import { UsersService } from './users.service';
+import { LegacyProfileImportService } from '../legacy/legacy-profile-import.service';
+import { LegacyProfileImportResult } from '../legacy/legacy.types';
 import { ActivateUserResult, PreferredDrinkDto, UserDto } from './users.types';
 
 interface ActivateUserResponse {
@@ -34,6 +38,14 @@ interface PreferredDrinkListResponse {
   data: PreferredDrinkDto[];
 }
 
+interface UpdateCurrentUserProfileResponse {
+  data: UserDto;
+}
+
+interface ImportLegacyProfileResponse {
+  data: LegacyProfileImportResult;
+}
+
 interface PreferredDrinkResponse {
   data: PreferredDrinkDto;
 }
@@ -45,7 +57,10 @@ interface EmptyResponse {
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly legacyProfileImportService: LegacyProfileImportService,
+  ) {}
 
   @Get('me')
   @ApiBearerAuth()
@@ -57,6 +72,39 @@ export class UsersController {
     );
 
     return { data: user };
+  }
+
+  @Patch('me/profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiOkResponse({ description: 'Current user profile updated' })
+  async updateMyProfile(
+    @Req() request: Request,
+    @Body() updateCurrentUserProfileDto: UpdateCurrentUserProfileDto,
+  ): Promise<UpdateCurrentUserProfileResponse> {
+    const user = await this.usersService.updateCurrentUserProfile(
+      request.headers.authorization,
+      updateCurrentUserProfileDto,
+    );
+
+    return { data: user };
+  }
+
+  @Post('me/profile/import-legacy')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Import selected legacy profile preferred drinks' })
+  @ApiCreatedResponse({ description: 'Legacy profile imported' })
+  async importLegacyProfile(
+    @Req() request: Request,
+    @Body() importLegacyProfileDto: ImportLegacyProfileDto,
+  ): Promise<ImportLegacyProfileResponse> {
+    const result =
+      await this.legacyProfileImportService.importSelectedLegacyProfile(
+        request.headers.authorization,
+        importLegacyProfileDto.legacyUserId,
+      );
+
+    return { data: result };
   }
 
   @Get('me/preferences')

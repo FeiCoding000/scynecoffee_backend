@@ -9,7 +9,7 @@ Profile setup 阶段需要处理 displayName 保存、legacy Firestore 用户搜
 新的业务流程是：
 
 1. 用户激活后输入 `displayName`。
-2. 前端调用 legacy user search API，只根据 `displayName` 查询 legacy Firestore users。
+2. 前端调用 legacy customer search API，只根据 `displayName` 查询 legacy Firestore customer。
 3. Search API 返回候选 legacy users 列表；没有匹配时返回空数组。
 4. 如果没有匹配项，前端展示 no-match 结果；用户确认继续后调用 profile update API 保存 `displayName`，再进入手动 preferred drink 设置页面。
 5. 如果有 1 个或多个匹配项，前端展示候选列表，用户选择其中一个 legacy user。
@@ -25,7 +25,7 @@ Profile setup 阶段需要处理 displayName 保存、legacy Firestore 用户搜
 - 单一职责拆分。
 - 每个类/服务都容易 mock。
 - 每个业务分支都容易写单元测试。
-- 先实现 legacy user search 候选列表逻辑，再根据真实 Firestore option schema 实现 drink mapping。
+- 先实现 legacy customer search 候选列表逻辑，再根据真实 Firestore option schema 实现 drink mapping。
 
 ---
 
@@ -75,7 +75,7 @@ LegacyUserCandidateDto
 
 职责：
 
-- 描述 legacy Firestore user 数据。
+- 描述 legacy Firestore customer 数据。
 - 描述返回给前端展示的候选 legacy user。
 
 候选返回结构建议：
@@ -126,7 +126,7 @@ toCandidate(legacyUser: LegacyUser): LegacyUserCandidateDto
 
 ---
 
-## 4. Legacy User Search Service
+## 4. Legacy Customer Search Service
 
 建议新增：
 
@@ -215,7 +215,7 @@ LegacyProfileImportService
 职责：
 
 - 当前用户提交 `legacyUserId`。
-- 根据 `legacyUserId` 读取 legacy Firestore user。
+- 根据 `legacyUserId` 读取 legacy Firestore customer。
 - 遍历 legacy user 的 `options`。
 - 调用 `LegacyDrinkOptionMapper.map(option)`。
 - 调用 `DrinkConfigurationsService.findOrCreate(...)` 复用或创建 drink configuration。
@@ -324,7 +324,7 @@ Controller 不负责：
 2. 实现 `LegacyUsersRepository`。
 3. 实现 `LegacyUserCandidateMapper`。
 4. 实现 `LegacyUserSearchService`。
-5. 补 legacy user search 单元测试。
+5. 补 legacy customer search 单元测试。
 6. 实现 current user profile update DTO/service。
 7. 补 profile update 单元测试。
 8. 获取并确认真实 Firestore `options` schema。

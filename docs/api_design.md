@@ -283,9 +283,9 @@ Identity fields such as Firebase UID, Google email and role are not accepted fro
 
 ### Purpose
 
-Search legacy Firestore user profiles by a submitted display name.
+Search legacy Firestore customer profiles by a submitted display name.
 
-After activation, the frontend asks the user to enter their name. Clicking search/confirm calls this endpoint. This endpoint only searches legacy Firestore users. It does not update the application user's `displayName`, does not import preferred drinks, and does not create preferred drinks.
+After activation, the frontend asks the user to enter their name. Clicking search/confirm calls this endpoint. This endpoint only searches legacy Firestore customer. It does not update the application user's `displayName`, does not import preferred drinks, and does not create preferred drinks.
 
 ### Authentication
 
@@ -394,7 +394,7 @@ Required.
 
 Import preferred drinks from a user-selected legacy Firestore profile.
 
-This endpoint is called after legacy user search returns candidates and the user selects the correct legacy profile. It uses the selected `legacyUserId` to load the legacy Firestore user document, maps the selected legacy `options`, and writes new preferred drinks into PostgreSQL.
+This endpoint is called after legacy customer search returns candidates and the user selects the correct legacy profile. It uses the selected `legacyUserId` to load the legacy Firestore customer document, maps the selected legacy `options`, and writes new preferred drinks into PostgreSQL.
 
 This endpoint does not search by display name and does not update the application user's `displayName`.
 

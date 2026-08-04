@@ -2,16 +2,27 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { App, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { Auth, DecodedIdToken, getAuth } from 'firebase-admin/auth';
+import { Firestore, getFirestore } from 'firebase-admin/firestore';
 
 @Injectable()
 export class FirebaseAdminService {
   private app?: App;
   private auth?: Auth;
+  private firestore?: Firestore;
 
   constructor(private readonly configService: ConfigService) {}
 
   verifyIdToken(idToken: string): Promise<DecodedIdToken> {
     return this.getAuth().verifyIdToken(idToken);
+  }
+
+  getFirestore(): Firestore {
+    if (!this.firestore) {
+      this.app = this.initializeFirebaseApp();
+      this.firestore = getFirestore(this.app);
+    }
+
+    return this.firestore;
   }
 
   private getAuth(): Auth {

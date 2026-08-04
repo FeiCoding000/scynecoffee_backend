@@ -74,7 +74,7 @@ Introduce application user management.
 - Start activated users with an empty preferred drink list.
 - Claim activation codes after successful activation.
 - Implement post-activation current-user profile update with submitted display name.
-- Implement legacy Firestore user search by submitted display name without updating the application user.
+- Implement legacy Firestore customer search by submitted display name without updating the application user.
 - Return matching legacy user candidates for frontend selection.
 - Import selected legacy `options` into drink configurations and preferred drinks only after user confirmation.
 

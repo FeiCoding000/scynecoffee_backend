@@ -214,7 +214,7 @@ Activation state is stored on the User record with `isActivated` and `activatedA
 
 ## Profile Setup and Legacy Preferred Drink Migration
 
-Existing Firestore user documents contain coupled profile data and drink `options`. After activation, the frontend asks the user to enter their name and searches legacy Firestore users by that submitted display name.
+Existing Firestore user documents contain coupled profile data and drink `options`. After activation, the frontend asks the user to enter their name and searches legacy Firestore customer by that submitted display name.
 
 Legacy user search is intentionally separate from application profile updates. The search endpoint only returns matching legacy candidates and does not update `users.displayName`, import `options`, or create preferred drinks.
 
@@ -223,7 +223,7 @@ Legacy preferred drink import must be user-confirmed. The backend must not autom
 The migration process should:
 
 - Require an already activated application user for profile updates and legacy import.
-- Use submitted `displayName` as the legacy Firestore user lookup key in the search endpoint.
+- Use submitted `displayName` as the legacy Firestore customer lookup key in the search endpoint.
 - Return `legacyUsers: []` when no legacy users match.
 - Return a candidate list when one or more legacy users match, and do not import `options` yet.
 - Update the application user's `displayName` through a separate current-user profile update endpoint after the user confirms the name.
