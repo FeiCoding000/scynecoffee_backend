@@ -9,6 +9,7 @@ export interface UserDto {
   role: UserRole;
   status: UserStatus;
   isActivated: boolean;
+  isProfileSetupCompleted: boolean;
 }
 
 export interface ActivateUserResult {

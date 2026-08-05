@@ -160,7 +160,8 @@ Normal verification uses Firebase Admin SDK ID token verification without revoca
           "googleEmail": "user@example.com",
           "role": "staff",
           "status": "ACTIVE",
-          "isActivated": true
+          "isActivated": true,
+          "isProfileSetupCompleted": false
         }
       }
     }
@@ -268,7 +269,8 @@ Identity fields such as Firebase UID, Google email and role are not accepted fro
           "googleEmail": "user@example.com",
           "role": "staff",
           "status": "ACTIVE",
-          "isActivated": true
+          "isActivated": true,
+          "isProfileSetupCompleted": false
         }
       }
     }
@@ -437,10 +439,13 @@ Required.
           "googleEmail": "user@example.com",
           "role": "staff",
           "status": "ACTIVE",
-          "isActivated": true
+          "isActivated": true,
+          "isProfileSetupCompleted": true
         }
       }
     }
+
+Updating `displayName` marks profile setup as completed by setting `isProfileSetupCompleted` to `true`.
 
 ## 4.6 Import Selected Legacy Profile
 
@@ -500,7 +505,8 @@ Required.
           "googleEmail": "user@example.com",
           "role": "staff",
           "status": "ACTIVE",
-          "isActivated": true
+          "isActivated": true,
+          "isProfileSetupCompleted": true
         },
         "importedPreferredDrinkCount": 2
       }

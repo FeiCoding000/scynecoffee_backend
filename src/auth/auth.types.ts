@@ -14,6 +14,7 @@ export interface AuthenticatedUserDto {
   role: UserRole;
   status: UserStatus;
   isActivated: boolean;
+  isProfileSetupCompleted: boolean;
 }
 
 export interface AuthVerifyResult {

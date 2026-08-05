@@ -61,7 +61,7 @@ export class UsersService {
 
     const updatedUser = await this.prismaService.user.update({
       where: { id: user.id },
-      data: { displayName },
+      data: { displayName, isProfileSetupCompleted: true },
     });
 
     return this.toUserDto(updatedUser);
@@ -374,6 +374,7 @@ export class UsersService {
       role: user.role,
       status: user.status,
       isActivated: user.isActivated,
+      isProfileSetupCompleted: user.isProfileSetupCompleted,
     };
   }
 

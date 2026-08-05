@@ -81,6 +81,7 @@ export class AuthService {
       role: user.role,
       status: user.status,
       isActivated: user.isActivated,
+      isProfileSetupCompleted: user.isProfileSetupCompleted,
     };
   }
 }

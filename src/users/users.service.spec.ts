@@ -235,7 +235,10 @@ describe('UsersService', () => {
     ).resolves.toMatchObject({ displayName: 'Chloe Woodburn' });
     expect(prismaService.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { displayName: 'Chloe Woodburn' },
+      data: {
+        displayName: 'Chloe Woodburn',
+        isProfileSetupCompleted: true,
+      },
     });
   });
 
