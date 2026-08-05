@@ -61,7 +61,7 @@ export class UsersService {
 
     const updatedUser = await this.prismaService.user.update({
       where: { id: user.id },
-      data: { displayName },
+      data: { displayName, isProfileSetupCompleted: true },
     });
 
     return this.toUserDto(updatedUser);
@@ -130,11 +130,18 @@ export class UsersService {
       throw new NotFoundException('Drink configuration not found');
     }
 
+    const existingPreferredDrinkCount =
+      await this.prismaService.preferredDrink.count({
+        where: { userId: user.id },
+      });
+
     const preferredDrink = await this.prismaService.preferredDrink.create({
       data: {
         userId: user.id,
         drinkConfigurationId,
         displayName,
+        sortOrder: existingPreferredDrinkCount,
+        isDefault: existingPreferredDrinkCount === 0,
       },
       include: { drinkConfiguration: true },
     });
@@ -367,6 +374,7 @@ export class UsersService {
       role: user.role,
       status: user.status,
       isActivated: user.isActivated,
+      isProfileSetupCompleted: user.isProfileSetupCompleted,
     };
   }
 

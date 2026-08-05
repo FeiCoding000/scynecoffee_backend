@@ -227,7 +227,8 @@ The migration process should:
 - Return `legacyUsers: []` when no legacy users match.
 - Return a candidate list when one or more legacy users match, and do not import `options` yet.
 - Update the application user's `displayName` through a separate current-user profile update endpoint after the user confirms the name.
-- Import legacy drink `options` only after the user selects a specific legacy user candidate.
+- Import legacy drink `options` only after the user selects a specific legacy customer candidate.
+- Reject legacy import when the current user already has preferred drinks, preventing duplicate imports and mixed manual/imported setup.
 - Map selected legacy drink options into `DrinkConfiguration` and `PreferredDrink` records.
 - Reuse existing drink configurations where repeated drink settings already exist.
 - Allow users to skip legacy import and create preferred drinks manually later.

@@ -252,12 +252,10 @@ interface LegacyProfileImportResult {
 - 每个有效 option 都调用 `DrinkConfigurationsService.findOrCreate`。
 - 每个有效 option 都创建 `PreferredDrink`。
 - `sortOrder` 按 legacy options 顺序写入。
-- 第一杯是否设置 `isDefault = true` 需要确认规则。
-- 重复导入如何处理需要确认规则。
+- 第一杯设置 `isDefault = true`。
+- 如果用户已经有 preferred drinks，再导入 legacy options，返回 `ConflictException`，阻止重复导入。
 
 待讨论问题：
-
-- 如果用户已经有 preferred drinks，再导入 legacy options，是阻止、追加、覆盖，还是跳过已有配置？
 - 一个 legacy profile 是否允许被多个新用户导入？
 - 是否需要记录某个用户已经从哪个 `legacyUserId` 导入过？目前数据库没有对应字段。
 
@@ -341,7 +339,6 @@ Controller 不负责：
 以下内容先不要实现，等真实数据和规则确认：
 
 - legacy drink option 的完整 mapping。
-- 重复导入处理策略。
 - 是否记录 legacy import history。
 - 是否限制一个 legacy user 只能被一个新 user 导入。
 - 候选列表需要展示哪些更多字段。

@@ -68,6 +68,7 @@ Introduce application user management.
 - Create User domain.
 - Create Role domain.
 - Create activation code mechanism.
+- Implement admin-only activation code generation for STAFF role.
 - Implement user activation flow.
 - Bind Firebase UID and Google provider email to application users during activation.
 - Store user activation state with `isActivated` and `activatedAt`.

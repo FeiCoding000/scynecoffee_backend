@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import {
   DrinkCategory,
   DrinkStrength,
@@ -52,6 +53,25 @@ describe('LegacyPreferredDrinkImportService', () => {
       drinkConfigurationsService as unknown as DrinkConfigurationsService,
       mapper as unknown as LegacyDrinkOptionMapper,
     );
+  });
+
+  it('throws ConflictException when user already has preferred drinks', async () => {
+    prismaService.preferredDrink.count.mockResolvedValue(1);
+
+    await expect(
+      service.importForUser(user, {
+        legacyUserId: 'legacy-user-1',
+        displayName: 'Chloe Woodburn',
+        firstName: 'Chloe',
+        lastName: 'Woodburn',
+        normalizedName: 'chloe woodburn',
+        options: [{ title: 'Flat White' }],
+      }),
+    ).rejects.toThrow(ConflictException);
+
+    expect(mapper.map).not.toHaveBeenCalled();
+    expect(drinkConfigurationsService.findOrCreate).not.toHaveBeenCalled();
+    expect(prismaService.preferredDrink.create).not.toHaveBeenCalled();
   });
 
   it('maps valid options and creates preferred drinks in legacy order', async () => {
